@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals'
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals'
 import { loadConfig } from '../config.js'
 
 describe('loadConfig', () => {
@@ -25,13 +25,15 @@ describe('loadConfig', () => {
     expect(config.slack.botToken).toBe('xoxb-test-token')
     expect(config.slack.appToken).toBe('xapp-test-token')
     expect(config.slack.signingSecret).toBe('test-secret')
-    expect(config.agent.apiKey).toBe('sk-ant-test-key')
   })
 
   it('should use default values when optional variables are not set', () => {
+    // Clear AGENT_MODEL to test default value
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+    process.env['AGENT_MODEL'] = undefined
     const config = loadConfig()
 
-    expect(config.agent.model).toBe('claude-opus-4-5')
+    expect(config.agent.model).toBe('claude-sonnet-4-5-20250929')
     expect(config.agent.maxTurns).toBe(50)
     expect(config.sessions.databasePath).toBe('./data/sessions.db')
     expect(config.sessions.expireDays).toBe(7)
@@ -39,7 +41,9 @@ describe('loadConfig', () => {
   })
 
   it('should parse comma-separated tool config', () => {
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
     process.env['TOOL_SHELL_ALLOWED_COMMANDS'] = 'git,npm,ls'
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
     process.env['TOOL_BROWSER_WHITELIST'] = '*.example.com,*.test.com'
 
     const config = loadConfig()
@@ -49,6 +53,7 @@ describe('loadConfig', () => {
   })
 
   it('should handle wildcard for shell commands', () => {
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
     process.env['TOOL_SHELL_ALLOWED_COMMANDS'] = '*'
 
     const config = loadConfig()
@@ -57,7 +62,8 @@ describe('loadConfig', () => {
   })
 
   it('should throw error for missing required environment variables', () => {
-    delete process.env['SLACK_BOT_TOKEN']
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+    process.env['SLACK_BOT_TOKEN'] = undefined
 
     expect(() => loadConfig()).toThrow('Missing required environment variable: SLACK_BOT_TOKEN')
   })

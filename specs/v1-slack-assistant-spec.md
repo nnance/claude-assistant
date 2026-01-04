@@ -7,7 +7,7 @@
 
 ## Overview
 
-A self-hosted personal AI assistant built on the Claude Agent SDK, running as a daemon on macOS. This initial version focuses on a **single agent** integrated exclusively with **Slack** for communication.
+A self-hosted personal AI assistant built on the Claude Agent SDK: @anthropic-ai/claude-agent-sdk, running as a daemon on macOS. This initial version focuses on a **single agent** integrated exclusively with **Slack** for communication.
 
 ### MVP Scope
 

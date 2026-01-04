@@ -13,7 +13,6 @@ export interface SlackConfig {
 export interface AgentConfig {
   model: string
   maxTurns: number
-  apiKey: string
 }
 
 export interface SessionConfig {
@@ -58,6 +57,9 @@ function parseCommaSeparated(value: string): string[] {
 }
 
 export function loadConfig(): Config {
+  // Validate that ANTHROPIC_API_KEY is set (the SDK reads it directly from env)
+  requireEnv('ANTHROPIC_API_KEY')
+
   return {
     slack: {
       botToken: requireEnv('SLACK_BOT_TOKEN'),
@@ -66,9 +68,8 @@ export function loadConfig(): Config {
       socketMode: optionalEnv('SLACK_SOCKET_MODE', 'true') === 'true',
     },
     agent: {
-      model: optionalEnv('AGENT_MODEL', 'claude-opus-4-5'),
+      model: optionalEnv('AGENT_MODEL', 'claude-sonnet-4-5-20250929'),
       maxTurns: Number.parseInt(optionalEnv('AGENT_MAX_TURNS', '50'), 10),
-      apiKey: requireEnv('ANTHROPIC_API_KEY'),
     },
     sessions: {
       databasePath: optionalEnv('SESSION_DATABASE_PATH', './data/sessions.db'),
@@ -78,7 +79,7 @@ export function loadConfig(): Config {
       shellAllowedCommands: parseCommaSeparated(optionalEnv('TOOL_SHELL_ALLOWED_COMMANDS', '*')),
       shellTimeoutMs: Number.parseInt(optionalEnv('TOOL_SHELL_TIMEOUT_MS', '30000'), 10),
       browserWhitelist: parseCommaSeparated(
-        optionalEnv('TOOL_BROWSER_WHITELIST', '*.google.com,*.github.com,*.stackoverflow.com')
+        optionalEnv('TOOL_BROWSER_WHITELIST', '*.google.com,*.github.com,*.stackoverflow.com'),
       ),
     },
     logLevel: optionalEnv('LOG_LEVEL', 'info'),

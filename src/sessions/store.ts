@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import Database from 'better-sqlite3'
 import type { CreateSessionInput, Session, SessionRow } from './types.js'
 
 export class SessionStore {

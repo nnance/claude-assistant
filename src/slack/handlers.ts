@@ -1,7 +1,7 @@
 import type { App } from '@slack/bolt'
+import type { Logger } from 'pino'
 import type { Agent } from '../agent.js'
 import type { SessionStore } from '../sessions/store.js'
-import type { Logger } from 'pino'
 
 interface AppMentionEvent {
   type: 'app_mention'
@@ -41,7 +41,7 @@ async function addThinkingReaction(
   client: App['client'],
   channel: string,
   timestamp: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<void> {
   try {
     await client.reactions.add({
@@ -58,7 +58,7 @@ async function removeThinkingReaction(
   client: App['client'],
   channel: string,
   timestamp: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<void> {
   try {
     await client.reactions.remove({
@@ -101,13 +101,11 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     await addThinkingReaction(client, mentionEvent.channel, mentionEvent.ts, handlerLogger)
 
     try {
-      // Process with agent
-      const result = await agent.send(session.id, messageText)
+      // Process with agent (pass existing session ID for resumption)
+      const result = await agent.send(messageText, session.agent_session_id)
 
-      // Update session with agent session ID if needed
-      if (!session.agent_session_id) {
-        sessionStore.updateAgentSessionId(session.id, result.sessionId)
-      }
+      // Store the SDK session ID for future resumption
+      sessionStore.updateAgentSessionId(session.id, result.sessionId)
 
       // Remove thinking reaction
       await removeThinkingReaction(client, mentionEvent.channel, mentionEvent.ts, handlerLogger)
@@ -172,13 +170,11 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     await addThinkingReaction(client, messageEvent.channel, messageEvent.ts, handlerLogger)
 
     try {
-      // Process with agent
-      const result = await agent.send(session.id, messageText)
+      // Process with agent (pass existing session ID for resumption)
+      const result = await agent.send(messageText, session.agent_session_id)
 
-      // Update session with agent session ID if needed
-      if (!session.agent_session_id) {
-        sessionStore.updateAgentSessionId(session.id, result.sessionId)
-      }
+      // Store the SDK session ID for future resumption
+      sessionStore.updateAgentSessionId(session.id, result.sessionId)
 
       // Remove thinking reaction
       await removeThinkingReaction(client, messageEvent.channel, messageEvent.ts, handlerLogger)

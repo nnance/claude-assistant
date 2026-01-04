@@ -1,8 +1,8 @@
 import { App, LogLevel } from '@slack/bolt'
-import type { SlackConfig } from '../config.js'
-import type { Agent } from '../agent.js'
-import type { SessionStore } from '../sessions/store.js'
 import type { Logger } from 'pino'
+import type { Agent } from '../agent.js'
+import type { SlackConfig } from '../config.js'
+import type { SessionStore } from '../sessions/store.js'
 import { registerHandlers } from './handlers.js'
 
 function mapLogLevel(level: string): LogLevel {
@@ -46,11 +46,14 @@ export function createSlackApp(deps: SlackAppDependencies): App {
   })
 
   // Test auth on startup
-  app.client.auth.test().then((result) => {
-    slackLogger.info({ botId: result.user_id, team: result.team }, 'Slack auth verified')
-  }).catch((error) => {
-    slackLogger.error({ error }, 'Slack auth failed - check your SLACK_BOT_TOKEN')
-  })
+  app.client.auth
+    .test()
+    .then((result) => {
+      slackLogger.info({ botId: result.user_id, team: result.team }, 'Slack auth verified')
+    })
+    .catch((error) => {
+      slackLogger.error({ error }, 'Slack auth failed - check your SLACK_BOT_TOKEN')
+    })
 
   // Log all incoming events for debugging
   app.use(async (args) => {

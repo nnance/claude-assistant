@@ -1,108 +1,84 @@
-import Anthropic from '@anthropic-ai/sdk'
-import type { AgentConfig } from './config.js'
+import {
+  type SDKAssistantMessage,
+  type SDKMessage,
+  unstable_v2_createSession,
+  unstable_v2_resumeSession,
+} from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
-
-const SYSTEM_PROMPT = `You are a personal AI assistant with full access to a macOS computer.
-You can read and write files, execute shell commands, and browse the web.
-You are helpful, direct, and security-conscious.
-Always confirm before destructive operations (deleting files, etc).`
-
-interface AgentMessage {
-  role: 'user' | 'assistant'
-  content: string
-}
-
-interface ConversationContext {
-  messages: AgentMessage[]
-}
+import type { AgentConfig } from './config.js'
 
 export interface AgentResponse {
   response: string
   sessionId: string
 }
 
+function extractTextFromMessage(msg: SDKMessage): string {
+  if (msg.type !== 'assistant') return ''
+  const assistantMsg = msg as SDKAssistantMessage
+  const content = assistantMsg.message.content
+  let text = ''
+  for (const block of content) {
+    if (block.type === 'text') {
+      text += block.text
+    }
+  }
+  return text
+}
+
 export class Agent {
-  private client: Anthropic
   private config: AgentConfig
   private logger: Logger
-  private conversations: Map<string, ConversationContext>
 
   constructor(config: AgentConfig, logger: Logger) {
-    this.client = new Anthropic({
-      apiKey: config.apiKey,
-    })
     this.config = config
     this.logger = logger.child({ component: 'agent' })
-    this.conversations = new Map()
   }
 
-  private getOrCreateConversation(sessionId: string): ConversationContext {
-    let conversation = this.conversations.get(sessionId)
-    if (!conversation) {
-      conversation = { messages: [] }
-      this.conversations.set(sessionId, conversation)
-    }
-    return conversation
-  }
+  async send(message: string, existingSessionId?: string | null): Promise<AgentResponse> {
+    const isResume = !!existingSessionId
+    this.logger.info(
+      { existingSessionId, isResume, messageLength: message.length },
+      isResume ? 'Resuming session' : 'Creating new session',
+    )
 
-  async send(sessionId: string, message: string): Promise<AgentResponse> {
-    const conversation = this.getOrCreateConversation(sessionId)
-
-    conversation.messages.push({
-      role: 'user',
-      content: message,
-    })
-
-    this.logger.info({ sessionId, messageLength: message.length }, 'Sending message to Claude')
+    const session = existingSessionId
+      ? unstable_v2_resumeSession(existingSessionId, {
+          model: this.config.model,
+        })
+      : unstable_v2_createSession({
+          model: this.config.model,
+        })
 
     try {
-      const response = await this.client.messages.create({
-        model: this.config.model,
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: conversation.messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-      })
+      await session.send(message)
 
-      const assistantContent = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('')
+      let sdkSessionId: string | undefined
+      let responseText = ''
 
-      conversation.messages.push({
-        role: 'assistant',
-        content: assistantContent,
-      })
+      for await (const msg of session.stream()) {
+        sdkSessionId = msg.session_id
+        responseText += extractTextFromMessage(msg)
+      }
 
-      // Trim conversation history if too long
-      if (conversation.messages.length > this.config.maxTurns * 2) {
-        conversation.messages = conversation.messages.slice(-this.config.maxTurns * 2)
+      if (!sdkSessionId) {
+        throw new Error('No session ID received from SDK')
       }
 
       this.logger.info(
-        { sessionId, responseLength: assistantContent.length },
-        'Received response from Claude'
+        { sessionId: sdkSessionId, responseLength: responseText.length },
+        'Received response from Claude',
       )
 
       return {
-        response: assistantContent,
-        sessionId,
+        response: responseText,
+        sessionId: sdkSessionId,
       }
     } catch (error) {
-      this.logger.error({ sessionId, error }, 'Error calling Claude API')
+      this.logger.error({ error, existingSessionId }, 'Error during agent interaction')
       throw error
+    } finally {
+      session.close()
     }
-  }
-
-  clearConversation(sessionId: string): void {
-    this.conversations.delete(sessionId)
-    this.logger.info({ sessionId }, 'Cleared conversation')
-  }
-
-  hasConversation(sessionId: string): boolean {
-    return this.conversations.has(sessionId)
   }
 }
 

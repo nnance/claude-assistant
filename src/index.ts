@@ -1,7 +1,7 @@
-import { loadConfig, createLogger } from './config.js'
 import { createAgent } from './agent.js'
-import { createSlackApp } from './slack/app.js'
+import { createLogger, loadConfig } from './config.js'
 import { SessionStore } from './sessions/store.js'
+import { createSlackApp } from './slack/app.js'
 
 async function main() {
   const config = loadConfig()
