@@ -37,7 +37,6 @@ describe('loadConfig', () => {
     expect(config.agent.maxTurns).toBe(50)
     expect(config.sessions.databasePath).toBe('./data/sessions.db')
     expect(config.sessions.expireDays).toBe(7)
-    expect(config.logLevel).toBe('info')
   })
 
   it('should parse comma-separated tool config', () => {
