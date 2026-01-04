@@ -4,6 +4,14 @@ import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
 import { createAppleServicesMcpServer } from './tools/index.js'
 
+const SYSTEM_PROMPT = `You are an assistant AI agent with access to Apple Applications (Calendar, Notes) on the user's Mac.
+Use the provided tools to manage and retrieve information as needed to assist with the user's requests.
+
+# Key Information
+
+- Personal Information: Use Apple Note titled "Personal Information" for relevant personal details.
+- Professional Information: Use Apple Note titled "Professional Information" for relevant professional details.`
+
 export interface AgentResponse {
   response: string
   sessionId: string
@@ -79,6 +87,8 @@ export class Agent {
       options: {
         model: this.config.model,
         maxTurns: this.config.maxTurns,
+        // Custom system prompt for Apple services assistant
+        systemPrompt: SYSTEM_PROMPT,
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory and common locations
