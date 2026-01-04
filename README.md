@@ -29,6 +29,7 @@ A self-hosted personal AI assistant built on the Anthropic SDK, running as a dae
    - `im:history`
    - `im:read`
    - `im:write`
+   - `reactions:write`
 6. Subscribe to events under Event Subscriptions:
    - `app_mention`
    - `message.im`
@@ -106,7 +107,7 @@ See `.env.example` for all options:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AGENT_MODEL` | `claude-opus-4-5-20250929` | Claude model to use |
+| `AGENT_MODEL` | `claude-opus-4-5` | Claude model to use |
 | `AGENT_MAX_TURNS` | `50` | Max conversation turns |
 | `SESSION_DATABASE_PATH` | `./data/sessions.db` | SQLite database location |
 | `SESSION_EXPIRE_DAYS` | `7` | Days until session cleanup |

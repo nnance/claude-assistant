@@ -31,7 +31,7 @@ describe('loadConfig', () => {
   it('should use default values when optional variables are not set', () => {
     const config = loadConfig()
 
-    expect(config.agent.model).toBe('claude-opus-4-5-20250929')
+    expect(config.agent.model).toBe('claude-opus-4-5')
     expect(config.agent.maxTurns).toBe(50)
     expect(config.sessions.databasePath).toBe('./data/sessions.db')
     expect(config.sessions.expireDays).toBe(7)

@@ -66,7 +66,7 @@ export function loadConfig(): Config {
       socketMode: optionalEnv('SLACK_SOCKET_MODE', 'true') === 'true',
     },
     agent: {
-      model: optionalEnv('AGENT_MODEL', 'claude-opus-4-5-20250929'),
+      model: optionalEnv('AGENT_MODEL', 'claude-opus-4-5'),
       maxTurns: Number.parseInt(optionalEnv('AGENT_MAX_TURNS', '50'), 10),
       apiKey: requireEnv('ANTHROPIC_API_KEY'),
     },

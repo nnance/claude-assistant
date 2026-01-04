@@ -40,6 +40,27 @@ export function createSlackApp(deps: SlackAppDependencies): App {
     logLevel: mapLogLevel(logLevel),
   })
 
+  // Global error handler
+  app.error(async (error) => {
+    slackLogger.error({ error }, 'Slack app error')
+  })
+
+  // Test auth on startup
+  app.client.auth.test().then((result) => {
+    slackLogger.info({ botId: result.user_id, team: result.team }, 'Slack auth verified')
+  }).catch((error) => {
+    slackLogger.error({ error }, 'Slack auth failed - check your SLACK_BOT_TOKEN')
+  })
+
+  // Log all incoming events for debugging
+  app.use(async (args) => {
+    const payload = args.payload as { type?: string } | undefined
+    if (payload?.type) {
+      slackLogger.debug({ eventType: payload.type }, 'Received Slack event')
+    }
+    await args.next()
+  })
+
   // Register event handlers
   registerHandlers(app, {
     agent,

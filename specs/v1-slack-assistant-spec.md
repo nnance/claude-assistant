@@ -101,6 +101,7 @@ chat:write           # Send messages
 im:history           # Read DM history
 im:read              # Access DM metadata
 im:write             # Send DMs
+reactions:write      # Add thinking indicator
 ```
 
 ### Event Subscriptions
