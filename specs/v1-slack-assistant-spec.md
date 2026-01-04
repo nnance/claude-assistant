@@ -13,8 +13,9 @@ A self-hosted personal AI assistant built on the Claude Agent SDK, running as a 
 
 - Single Claude agent (no sub-agents)
 - Slack as the only communication channel
-- Full computer access (filesystem, shell, browser)
-- Session persistence across restarts
+- Full computer access (filesystem, shell, browser) via Claude Agent SDK tools
+- Session management with SQLite for session persistence across restarts
+- Daemonized with launchd for automatic startup and persistence
 - Always-on daemon
 
 ### Out of Scope (Future Versions)
@@ -72,18 +73,11 @@ claude-assistant/
 │   ├── sessions/
 │   │   ├── store.ts          # SQLite session persistence
 │   │   └── types.ts          # Session type definitions
-│   ├── tools/
-│   │   ├── index.ts          # Tool registry
-│   │   ├── filesystem.ts     # File read/write operations
-│   │   ├── shell.ts          # Shell command execution
-│   │   └── browser.ts        # Browser automation wrapper
 │   └── config.ts             # Configuration loading
-├── config/
-│   └── settings.yaml         # Runtime configuration
 ├── scripts/
 │   ├── install-daemon.sh     # launchd installation
 │   └── uninstall-daemon.sh   # launchd removal
-├── .env.example              # Environment variable template
+├── .env.example              # Environment variable template & runtime settings
 ├── package.json
 └── tsconfig.json
 ```
@@ -274,29 +268,24 @@ SLACK_SIGNING_SECRET=...
 LOG_LEVEL=info
 ```
 
-### Runtime Config (config/settings.yaml)
+### Runtime Config (.env.example)
 
-```yaml
-agent:
-  model: claude-opus-4-5-20250929
-  max_turns: 50  # Prevent infinite loops
+```bash
+# Agent Configuration
+AGENT_MODEL=claude-opus-4-5-20250929
+AGENT_MAX_TURNS=50  # Prevent infinite loops
 
-slack:
-  socket_mode: true
+# Slack Configuration
+SLACK_SOCKET_MODE=true
 
-sessions:
-  database_path: ./data/sessions.db
-  expire_days: 7
+# Session Configuration
+SESSION_DATABASE_PATH=./data/sessions.db
+SESSION_EXPIRE_DAYS=7
 
-tools:
-  shell:
-    allowed_commands: ["*"]  # Or restrict to specific commands
-    timeout_ms: 30000
-  browser:
-    whitelist:
-      - "*.google.com"
-      - "*.github.com"
-      - "*.stackoverflow.com"
+# Tool Configuration
+TOOL_SHELL_ALLOWED_COMMANDS=*  # Or comma-separated list: git,npm,ls
+TOOL_SHELL_TIMEOUT_MS=30000
+TOOL_BROWSER_WHITELIST=*.google.com,*.github.com,*.stackoverflow.com
 ```
 
 ---
