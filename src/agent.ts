@@ -11,6 +11,7 @@ export interface AgentResponse {
 export interface ProgressUpdate {
   type: 'tool_start' | 'tool_progress'
   toolName: string
+  toolInput?: Record<string, unknown>
   elapsedSeconds?: number
 }
 
@@ -29,14 +30,22 @@ function extractTextFromMessage(msg: SDKMessage): string {
   return text
 }
 
-function extractToolUsesFromMessage(msg: SDKMessage): string[] {
+interface ToolUseInfo {
+  name: string
+  input: Record<string, unknown>
+}
+
+function extractToolUsesFromMessage(msg: SDKMessage): ToolUseInfo[] {
   if (msg.type !== 'assistant') return []
   const assistantMsg = msg as SDKAssistantMessage
   const content = assistantMsg.message.content
-  const tools: string[] = []
+  const tools: ToolUseInfo[] = []
   for (const block of content) {
     if (block.type === 'tool_use') {
-      tools.push(block.name)
+      tools.push({
+        name: block.name,
+        input: block.input as Record<string, unknown>,
+      })
     }
   }
   return tools
@@ -100,8 +109,12 @@ export class Agent {
 
           // Check for tool_use in assistant messages
           const toolUses = extractToolUsesFromMessage(msg)
-          for (const toolName of toolUses) {
-            onProgress({ type: 'tool_start', toolName })
+          for (const tool of toolUses) {
+            onProgress({
+              type: 'tool_start',
+              toolName: tool.name,
+              toolInput: tool.input,
+            })
           }
         }
       }

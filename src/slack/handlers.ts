@@ -23,6 +23,71 @@ function getToolDescription(toolName: string): string {
   return TOOL_DESCRIPTIONS[toolName] || `Using ${toolName}`
 }
 
+// Maximum length for context strings to keep log entries concise
+const MAX_CONTEXT_LENGTH = 60
+
+function truncate(str: string | undefined, maxLen: number): string {
+  if (!str) return ''
+  if (str.length <= maxLen) return str
+  return `${str.substring(0, maxLen - 3)}...`
+}
+
+function escapeSlackText(text: string): string {
+  // Escape characters that have special meaning in Slack mrkdwn
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .replace(/`/g, "'") // Replace backticks to avoid breaking code formatting
+}
+
+function formatToolContext(toolName: string, input?: Record<string, unknown>): string {
+  if (!input) return ''
+
+  let context = ''
+
+  switch (toolName) {
+    case 'Read':
+    case 'Write':
+    case 'Edit':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['file_path'] as string) || ''
+      break
+
+    case 'Bash':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['command'] as string) || ''
+      break
+
+    case 'Grep':
+    case 'Glob':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['pattern'] as string) || ''
+      break
+
+    case 'WebFetch':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['url'] as string) || ''
+      break
+
+    case 'WebSearch':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['query'] as string) || ''
+      break
+
+    case 'Task':
+      // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+      context = (input['description'] as string) || truncate(input['prompt'] as string, 40) || ''
+      break
+
+    default:
+      return ''
+  }
+
+  return truncate(escapeSlackText(context), MAX_CONTEXT_LENGTH)
+}
+
 interface AppMentionEvent {
   type: 'app_mention'
   user: string
@@ -91,14 +156,25 @@ async function removeThinkingReaction(
   }
 }
 
+interface ToolLogEntry {
+  toolName: string
+  context: string
+}
+
 interface ProgressMessageState {
   messageTs: string | null
-  tools: string[]
+  logEntries: ToolLogEntry[]
   lastUpdate: number
 }
 
 // Minimum time between message updates (ms) to avoid rate limiting
 const UPDATE_THROTTLE_MS = 1000
+
+// Slack message character limit (safe threshold)
+const MAX_MESSAGE_LENGTH = 3500
+
+// Maximum number of log entries to keep
+const MAX_LOG_ENTRIES = 20
 
 function createProgressUpdater(
   client: App['client'],
@@ -108,8 +184,39 @@ function createProgressUpdater(
 ): { callback: ProgressCallback; getMessageTs: () => string | null } {
   const state: ProgressMessageState = {
     messageTs: null,
-    tools: [],
+    logEntries: [],
     lastUpdate: 0,
+  }
+
+  const formatLogMessage = (): string => {
+    if (state.logEntries.length === 0) {
+      return '_Working..._'
+    }
+
+    const lines = state.logEntries.map((entry) => {
+      const description = getToolDescription(entry.toolName)
+      if (entry.context) {
+        return `• ${description}: \`${entry.context}\``
+      }
+      return `• ${description}`
+    })
+
+    let message = `_Working..._\n${lines.join('\n')}`
+
+    // If message is too long, truncate oldest entries
+    while (message.length > MAX_MESSAGE_LENGTH && state.logEntries.length > 1) {
+      state.logEntries.shift()
+      const updatedLines = state.logEntries.map((entry) => {
+        const description = getToolDescription(entry.toolName)
+        if (entry.context) {
+          return `• ${description}: \`${entry.context}\``
+        }
+        return `• ${description}`
+      })
+      message = `_Working..._\n_(earlier entries truncated)_\n${updatedLines.join('\n')}`
+    }
+
+    return message
   }
 
   const updateMessage = async () => {
@@ -119,7 +226,7 @@ function createProgressUpdater(
     }
     state.lastUpdate = now
 
-    const statusText = `_Working... ${state.tools.map((t) => getToolDescription(t)).join(' → ')}_`
+    const statusText = formatLogMessage()
 
     try {
       if (!state.messageTs) {
@@ -145,11 +252,18 @@ function createProgressUpdater(
 
   const callback: ProgressCallback = (update: ProgressUpdate) => {
     if (update.type === 'tool_start') {
-      // Keep last 3 tools for brevity
-      state.tools.push(update.toolName)
-      if (state.tools.length > 3) {
-        state.tools.shift()
+      const context = formatToolContext(update.toolName, update.toolInput)
+
+      state.logEntries.push({
+        toolName: update.toolName,
+        context,
+      })
+
+      // Cap the number of entries
+      if (state.logEntries.length > MAX_LOG_ENTRIES) {
+        state.logEntries.shift()
       }
+
       // Fire and forget - don't block the agent
       updateMessage()
     }
