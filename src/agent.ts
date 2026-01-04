@@ -8,6 +8,14 @@ export interface AgentResponse {
   sessionId: string
 }
 
+export interface ProgressUpdate {
+  type: 'tool_start' | 'tool_progress'
+  toolName: string
+  elapsedSeconds?: number
+}
+
+export type ProgressCallback = (update: ProgressUpdate) => void
+
 function extractTextFromMessage(msg: SDKMessage): string {
   if (msg.type !== 'assistant') return ''
   const assistantMsg = msg as SDKAssistantMessage
@@ -21,6 +29,19 @@ function extractTextFromMessage(msg: SDKMessage): string {
   return text
 }
 
+function extractToolUsesFromMessage(msg: SDKMessage): string[] {
+  if (msg.type !== 'assistant') return []
+  const assistantMsg = msg as SDKAssistantMessage
+  const content = assistantMsg.message.content
+  const tools: string[] = []
+  for (const block of content) {
+    if (block.type === 'tool_use') {
+      tools.push(block.name)
+    }
+  }
+  return tools
+}
+
 export class Agent {
   private config: AgentConfig
   private logger: Logger
@@ -30,7 +51,11 @@ export class Agent {
     this.logger = logger.child({ component: 'agent' })
   }
 
-  async send(message: string, existingSessionId?: string | null): Promise<AgentResponse> {
+  async send(
+    message: string,
+    existingSessionId?: string | null,
+    onProgress?: ProgressCallback,
+  ): Promise<AgentResponse> {
     const isResume = !!existingSessionId
     this.logger.info(
       { existingSessionId, isResume, messageLength: message.length },
@@ -60,6 +85,25 @@ export class Agent {
       for await (const msg of q) {
         sdkSessionId = msg.session_id
         responseText += extractTextFromMessage(msg)
+
+        // Report tool progress
+        if (onProgress) {
+          // Check for tool_progress messages
+          if (msg.type === 'tool_progress') {
+            const progressMsg = msg as { tool_name: string; elapsed_time_seconds: number }
+            onProgress({
+              type: 'tool_progress',
+              toolName: progressMsg.tool_name,
+              elapsedSeconds: progressMsg.elapsed_time_seconds,
+            })
+          }
+
+          // Check for tool_use in assistant messages
+          const toolUses = extractToolUsesFromMessage(msg)
+          for (const toolName of toolUses) {
+            onProgress({ type: 'tool_start', toolName })
+          }
+        }
       }
 
       if (!sdkSessionId) {

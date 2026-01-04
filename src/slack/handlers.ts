@@ -1,7 +1,27 @@
 import type { App } from '@slack/bolt'
 import type { Logger } from 'pino'
-import type { Agent } from '../agent.js'
+import type { Agent, ProgressCallback, ProgressUpdate } from '../agent.js'
 import type { SessionStore } from '../sessions/store.js'
+
+// Map tool names to user-friendly descriptions
+const TOOL_DESCRIPTIONS: Record<string, string> = {
+  Read: 'Reading file',
+  Write: 'Writing file',
+  Edit: 'Editing file',
+  Bash: 'Running command',
+  Glob: 'Searching files',
+  Grep: 'Searching content',
+  LS: 'Listing directory',
+  Task: 'Running subtask',
+  WebFetch: 'Fetching URL',
+  WebSearch: 'Searching web',
+  TodoRead: 'Reading todos',
+  TodoWrite: 'Updating todos',
+}
+
+function getToolDescription(toolName: string): string {
+  return TOOL_DESCRIPTIONS[toolName] || `Using ${toolName}`
+}
 
 interface AppMentionEvent {
   type: 'app_mention'
@@ -71,6 +91,89 @@ async function removeThinkingReaction(
   }
 }
 
+interface ProgressMessageState {
+  messageTs: string | null
+  tools: string[]
+  lastUpdate: number
+}
+
+// Minimum time between message updates (ms) to avoid rate limiting
+const UPDATE_THROTTLE_MS = 1000
+
+function createProgressUpdater(
+  client: App['client'],
+  channel: string,
+  threadTs: string,
+  logger: Logger,
+): { callback: ProgressCallback; getMessageTs: () => string | null } {
+  const state: ProgressMessageState = {
+    messageTs: null,
+    tools: [],
+    lastUpdate: 0,
+  }
+
+  const updateMessage = async () => {
+    const now = Date.now()
+    if (now - state.lastUpdate < UPDATE_THROTTLE_MS) {
+      return // Throttle updates
+    }
+    state.lastUpdate = now
+
+    const statusText = `_Working... ${state.tools.map((t) => getToolDescription(t)).join(' → ')}_`
+
+    try {
+      if (!state.messageTs) {
+        // Post initial status message
+        const result = await client.chat.postMessage({
+          channel,
+          thread_ts: threadTs,
+          text: statusText,
+        })
+        state.messageTs = result.ts || null
+      } else {
+        // Update existing message
+        await client.chat.update({
+          channel,
+          ts: state.messageTs,
+          text: statusText,
+        })
+      }
+    } catch (error) {
+      logger.warn({ error }, 'Failed to update progress message')
+    }
+  }
+
+  const callback: ProgressCallback = (update: ProgressUpdate) => {
+    if (update.type === 'tool_start') {
+      // Keep last 3 tools for brevity
+      state.tools.push(update.toolName)
+      if (state.tools.length > 3) {
+        state.tools.shift()
+      }
+      // Fire and forget - don't block the agent
+      updateMessage()
+    }
+  }
+
+  return {
+    callback,
+    getMessageTs: () => state.messageTs,
+  }
+}
+
+async function deleteMessage(
+  client: App['client'],
+  channel: string,
+  ts: string,
+  logger: Logger,
+): Promise<void> {
+  try {
+    await client.chat.delete({ channel, ts })
+  } catch (error) {
+    logger.warn({ error }, 'Failed to delete progress message')
+  }
+}
+
 export function registerHandlers(app: App, deps: HandlerDependencies): void {
   const { agent, sessionStore, logger } = deps
 
@@ -100,15 +203,33 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     // Add thinking reaction
     await addThinkingReaction(client, mentionEvent.channel, mentionEvent.ts, handlerLogger)
 
+    // Create progress updater for status messages
+    const progressUpdater = createProgressUpdater(
+      client,
+      mentionEvent.channel,
+      threadTs,
+      handlerLogger,
+    )
+
     try {
       // Process with agent (pass existing session ID for resumption)
-      const result = await agent.send(messageText, session.agent_session_id)
+      const result = await agent.send(
+        messageText,
+        session.agent_session_id,
+        progressUpdater.callback,
+      )
 
       // Store the SDK session ID for future resumption
       sessionStore.updateAgentSessionId(session.id, result.sessionId)
 
       // Remove thinking reaction
       await removeThinkingReaction(client, mentionEvent.channel, mentionEvent.ts, handlerLogger)
+
+      // Delete the progress message if one was created
+      const progressTs = progressUpdater.getMessageTs()
+      if (progressTs) {
+        await deleteMessage(client, mentionEvent.channel, progressTs, handlerLogger)
+      }
 
       // Send response in thread
       await client.chat.postMessage({
@@ -123,6 +244,12 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
 
       // Remove thinking reaction
       await removeThinkingReaction(client, mentionEvent.channel, mentionEvent.ts, handlerLogger)
+
+      // Delete the progress message if one was created
+      const progressTs = progressUpdater.getMessageTs()
+      if (progressTs) {
+        await deleteMessage(client, mentionEvent.channel, progressTs, handlerLogger)
+      }
 
       // Send error message
       await client.chat.postMessage({
@@ -202,15 +329,33 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     // Add thinking reaction
     await addThinkingReaction(client, messageEvent.channel, messageEvent.ts, handlerLogger)
 
+    // Create progress updater for status messages
+    const progressUpdater = createProgressUpdater(
+      client,
+      messageEvent.channel,
+      threadTs,
+      handlerLogger,
+    )
+
     try {
       // Process with agent (pass existing session ID for resumption)
-      const result = await agent.send(messageText, session.agent_session_id)
+      const result = await agent.send(
+        messageText,
+        session.agent_session_id,
+        progressUpdater.callback,
+      )
 
       // Store the SDK session ID for future resumption
       sessionStore.updateAgentSessionId(session.id, result.sessionId)
 
       // Remove thinking reaction
       await removeThinkingReaction(client, messageEvent.channel, messageEvent.ts, handlerLogger)
+
+      // Delete the progress message if one was created
+      const progressTs = progressUpdater.getMessageTs()
+      if (progressTs) {
+        await deleteMessage(client, messageEvent.channel, progressTs, handlerLogger)
+      }
 
       // Send response (in thread if replying to thread, otherwise as new message)
       await client.chat.postMessage({
@@ -225,6 +370,12 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
 
       // Remove thinking reaction
       await removeThinkingReaction(client, messageEvent.channel, messageEvent.ts, handlerLogger)
+
+      // Delete the progress message if one was created
+      const progressTs = progressUpdater.getMessageTs()
+      if (progressTs) {
+        await deleteMessage(client, messageEvent.channel, progressTs, handlerLogger)
+      }
 
       // Send error message
       await client.chat.postMessage({
