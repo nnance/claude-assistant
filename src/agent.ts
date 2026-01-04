@@ -95,8 +95,8 @@ export class Agent {
         additionalDirectories: [os.homedir(), '/tmp', '/var'],
         // Accept file edits without prompting (since this is a personal assistant)
         permissionMode: 'acceptEdits',
-        // Load user settings from ~/.claude/settings.json
-        settingSources: ['user'],
+        // Load user settings from ~/.claude/settings.json and .claude/settings.local.json
+        settingSources: ['user', 'local'],
         // Register Apple services MCP server for Calendar, Contacts, Notes tools
         mcpServers: {
           'apple-services': this.appleServicesMcp,
