@@ -7,13 +7,18 @@
  * - Strikethrough: ~~text~~ → ~text~
  * - Links: [text](url) → <url|text>
  * - Headers: # Header → *Header*
+ * - Tables: wrapped in code blocks for monospace alignment
  */
 export function formatMarkdownForSlack(text: string): string {
   if (!text) return text
 
+  // Convert markdown tables to code blocks (before extracting code blocks)
+  // Match tables: lines starting with | and containing at least one |
+  let result = convertTablesToCodeBlocks(text)
+
   // Extract code blocks to protect them from transformation
   const codeBlocks: string[] = []
-  let result = text.replace(/```[\s\S]*?```/g, (match) => {
+  result = result.replace(/```[\s\S]*?```/g, (match) => {
     codeBlocks.push(match)
     return `__CODE_BLOCK_${codeBlocks.length - 1}__`
   })
@@ -69,4 +74,68 @@ export function formatMarkdownForSlack(text: string): string {
   }
 
   return result
+}
+
+/**
+ * Detects markdown tables and wraps them in code blocks for monospace rendering.
+ * A table is identified by consecutive lines that start and end with |
+ * Skips tables that are already inside code blocks.
+ */
+function convertTablesToCodeBlocks(text: string): string {
+  const lines = text.split('\n')
+  const result: string[] = []
+  let tableLines: string[] = []
+  let inTable = false
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    // Track code block boundaries
+    if (/^```/.test(line)) {
+      if (inTable) {
+        // End table before code block starts
+        result.push('```')
+        result.push(...tableLines)
+        result.push('```')
+        tableLines = []
+        inTable = false
+      }
+      inCodeBlock = !inCodeBlock
+      result.push(line)
+      continue
+    }
+
+    // Skip table detection inside code blocks
+    if (inCodeBlock) {
+      result.push(line)
+      continue
+    }
+
+    const isTableLine = /^\s*\|.*\|\s*$/.test(line)
+
+    if (isTableLine) {
+      if (!inTable) {
+        inTable = true
+      }
+      tableLines.push(line)
+    } else {
+      if (inTable) {
+        // End of table - wrap collected lines in code block
+        result.push('```')
+        result.push(...tableLines)
+        result.push('```')
+        tableLines = []
+        inTable = false
+      }
+      result.push(line)
+    }
+  }
+
+  // Handle table at end of text
+  if (inTable && tableLines.length > 0) {
+    result.push('```')
+    result.push(...tableLines)
+    result.push('```')
+  }
+
+  return result.join('\n')
 }

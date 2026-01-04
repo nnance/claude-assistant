@@ -102,6 +102,82 @@ const x = **test**;
     })
   })
 
+  describe('table conversion', () => {
+    it('wraps simple table in code block', () => {
+      const input = `| Name | Value |
+| ---- | ----- |
+| foo  | 123   |`
+
+      const expected = `\`\`\`
+| Name | Value |
+| ---- | ----- |
+| foo  | 123   |
+\`\`\``
+
+      expect(formatMarkdownForSlack(input)).toBe(expected)
+    })
+
+    it('handles table with surrounding text', () => {
+      const input = `Here's a table:
+
+| Col1 | Col2 |
+| ---- | ---- |
+| a    | b    |
+
+And more text.`
+
+      const expected = `Here's a table:
+
+\`\`\`
+| Col1 | Col2 |
+| ---- | ---- |
+| a    | b    |
+\`\`\`
+
+And more text.`
+
+      expect(formatMarkdownForSlack(input)).toBe(expected)
+    })
+
+    it('does not double-wrap tables already in code blocks', () => {
+      const input = `\`\`\`
+| Name | Value |
+| ---- | ----- |
+| foo  | 123   |
+\`\`\``
+
+      expect(formatMarkdownForSlack(input)).toBe(input)
+    })
+
+    it('handles multiple tables', () => {
+      const input = `| A | B |
+| - | - |
+| 1 | 2 |
+
+Some text
+
+| C | D |
+| - | - |
+| 3 | 4 |`
+
+      const expected = `\`\`\`
+| A | B |
+| - | - |
+| 1 | 2 |
+\`\`\`
+
+Some text
+
+\`\`\`
+| C | D |
+| - | - |
+| 3 | 4 |
+\`\`\``
+
+      expect(formatMarkdownForSlack(input)).toBe(expected)
+    })
+  })
+
   describe('combined formatting', () => {
     it('handles mixed formatting in one message', () => {
       const input = `# Hello
