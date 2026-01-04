@@ -133,27 +133,60 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     }
   })
 
-  // Handle direct messages
-  app.event('message', async ({ event, client }) => {
+  // Handle direct messages and thread replies
+  app.event('message', async ({ event, client, context }) => {
     const messageEvent = event as MessageEvent
 
-    // Only handle DMs
-    if (messageEvent.channel_type !== 'im') {
-      return
-    }
+    // Debug logging to trace message handling
+    logger.debug(
+      {
+        channel: messageEvent.channel,
+        channel_type: messageEvent.channel_type,
+        user: messageEvent.user,
+        botUserId: context.botUserId,
+        subtype: messageEvent.subtype,
+        thread_ts: messageEvent.thread_ts,
+        hasText: !!messageEvent.text,
+      },
+      'Message event received',
+    )
 
     // Ignore bot messages and message changes
     if (messageEvent.subtype) {
+      logger.debug({ subtype: messageEvent.subtype }, 'Ignoring message with subtype')
       return
     }
 
+    // Ignore messages from the bot itself
+    if (messageEvent.user === context.botUserId) {
+      logger.debug('Ignoring message from bot itself')
+      return
+    }
+
+    const isDM = messageEvent.channel_type === 'im'
+
+    // For non-DM messages, only respond if it's a thread reply with an existing session
+    if (!isDM) {
+      const threadTs = messageEvent.thread_ts
+      if (!threadTs) {
+        // Not a thread reply in a channel - ignore (require @mention for new conversations)
+        return
+      }
+      // Check if we have an existing session for this thread
+      const existingSession = sessionStore.getByThread(messageEvent.channel, threadTs)
+      if (!existingSession) {
+        // No existing session for this thread - ignore (wasn't started with @mention)
+        return
+      }
+    }
+
     const handlerLogger = logger.child({
-      handler: 'direct_message',
+      handler: isDM ? 'direct_message' : 'thread_reply',
       channel: messageEvent.channel,
       user: messageEvent.user,
     })
 
-    handlerLogger.info('Received direct message')
+    handlerLogger.info(isDM ? 'Received direct message' : 'Received thread reply')
 
     const messageText = messageEvent.text?.trim()
     if (!messageText) {
@@ -161,7 +194,7 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
       return
     }
 
-    // For DMs, use the message ts as the thread
+    // For DMs, use the message ts as the thread; for thread replies, use the thread_ts
     const threadTs = messageEvent.thread_ts || messageEvent.ts
     const session = sessionStore.getOrCreate(messageEvent.channel, threadTs)
     handlerLogger.info({ sessionId: session.id }, 'Using session')
