@@ -1,9 +1,5 @@
-import {
-  type SDKAssistantMessage,
-  type SDKMessage,
-  unstable_v2_createSession,
-  unstable_v2_resumeSession,
-} from '@anthropic-ai/claude-agent-sdk'
+import * as os from 'node:os'
+import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
 
@@ -41,21 +37,27 @@ export class Agent {
       isResume ? 'Resuming session' : 'Creating new session',
     )
 
-    const session = existingSessionId
-      ? unstable_v2_resumeSession(existingSessionId, {
-          model: this.config.model,
-        })
-      : unstable_v2_createSession({
-          model: this.config.model,
-        })
+    const q = query({
+      prompt: message,
+      options: {
+        model: this.config.model,
+        maxTurns: this.config.maxTurns,
+        // Resume existing session if we have one
+        ...(existingSessionId ? { resume: existingSessionId } : {}),
+        // Allow access to user's home directory and common locations
+        additionalDirectories: [os.homedir(), '/tmp', '/var'],
+        // Accept file edits without prompting (since this is a personal assistant)
+        permissionMode: 'acceptEdits',
+        // Load user settings from ~/.claude/settings.json
+        settingSources: ['user'],
+      },
+    })
 
     try {
-      await session.send(message)
-
       let sdkSessionId: string | undefined
       let responseText = ''
 
-      for await (const msg of session.stream()) {
+      for await (const msg of q) {
         sdkSessionId = msg.session_id
         responseText += extractTextFromMessage(msg)
       }
@@ -76,8 +78,6 @@ export class Agent {
     } catch (error) {
       this.logger.error({ error, existingSessionId }, 'Error during agent interaction')
       throw error
-    } finally {
-      session.close()
     }
   }
 }
