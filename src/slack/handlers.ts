@@ -2,6 +2,7 @@ import type { App } from '@slack/bolt'
 import type { Logger } from 'pino'
 import type { Agent, ProgressCallback, ProgressUpdate } from '../agent.js'
 import type { SessionStore } from '../sessions/store.js'
+import { formatMarkdownForSlack } from './formatter.js'
 
 // Map tool names to user-friendly descriptions
 const TOOL_DESCRIPTIONS: Record<string, string> = {
@@ -231,11 +232,11 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
         await deleteMessage(client, mentionEvent.channel, progressTs, handlerLogger)
       }
 
-      // Send response in thread
+      // Send response in thread (formatted for Slack)
       await client.chat.postMessage({
         channel: mentionEvent.channel,
         thread_ts: threadTs,
-        text: result.response,
+        text: formatMarkdownForSlack(result.response),
       })
 
       handlerLogger.info('Sent response')
@@ -361,7 +362,7 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
       await client.chat.postMessage({
         channel: messageEvent.channel,
         thread_ts: messageEvent.thread_ts,
-        text: result.response,
+        text: formatMarkdownForSlack(result.response),
       })
 
       handlerLogger.info('Sent response')
