@@ -2,6 +2,7 @@ import * as os from 'node:os'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
+import { createAppleServicesMcpServer } from './tools/index.js'
 
 export interface AgentResponse {
   response: string
@@ -54,10 +55,12 @@ function extractToolUsesFromMessage(msg: SDKMessage): ToolUseInfo[] {
 export class Agent {
   private config: AgentConfig
   private logger: Logger
+  private appleServicesMcp: ReturnType<typeof createAppleServicesMcpServer>
 
   constructor(config: AgentConfig, logger: Logger) {
     this.config = config
     this.logger = logger.child({ component: 'agent' })
+    this.appleServicesMcp = createAppleServicesMcpServer()
   }
 
   async send(
@@ -84,6 +87,10 @@ export class Agent {
         permissionMode: 'acceptEdits',
         // Load user settings from ~/.claude/settings.json
         settingSources: ['user'],
+        // Register Apple services MCP server for Calendar, Contacts, Notes tools
+        mcpServers: {
+          'apple-services': this.appleServicesMcp,
+        },
       },
     })
 
