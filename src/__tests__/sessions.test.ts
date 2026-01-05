@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals'
+import { afterEach, beforeEach, describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { SessionStore } from '../sessions/store.js'
 
 describe('SessionStore', () => {
@@ -40,19 +41,19 @@ describe('SessionStore', () => {
         slack_thread_ts: '1234567890.123456',
       })
 
-      expect(session.id).toBeDefined()
-      expect(session.slack_channel_id).toBe('C123')
-      expect(session.slack_thread_ts).toBe('1234567890.123456')
-      expect(session.agent_session_id).toBeNull()
-      expect(session.created_at).toBeInstanceOf(Date)
-      expect(session.last_active).toBeInstanceOf(Date)
+      assert.ok(session.id !== undefined, 'session.id should be defined')
+      assert.strictEqual(session.slack_channel_id, 'C123')
+      assert.strictEqual(session.slack_thread_ts, '1234567890.123456')
+      assert.strictEqual(session.agent_session_id, null)
+      assert.ok(session.created_at instanceof Date)
+      assert.ok(session.last_active instanceof Date)
     })
   })
 
   describe('getByThread', () => {
     it('should return null for non-existent session', () => {
       const session = store.getByThread('C123', '1234567890.123456')
-      expect(session).toBeNull()
+      assert.strictEqual(session, null)
     })
 
     it('should return session by thread', () => {
@@ -63,15 +64,15 @@ describe('SessionStore', () => {
 
       const found = store.getByThread('C123', '1234567890.123456')
 
-      expect(found).not.toBeNull()
-      expect(found?.id).toBe(created.id)
+      assert.notStrictEqual(found, null)
+      assert.strictEqual(found?.id, created.id)
     })
   })
 
   describe('getById', () => {
     it('should return null for non-existent id', () => {
       const session = store.getById('non-existent-id')
-      expect(session).toBeNull()
+      assert.strictEqual(session, null)
     })
 
     it('should return session by id', () => {
@@ -82,8 +83,8 @@ describe('SessionStore', () => {
 
       const found = store.getById(created.id)
 
-      expect(found).not.toBeNull()
-      expect(found?.id).toBe(created.id)
+      assert.notStrictEqual(found, null)
+      assert.strictEqual(found?.id, created.id)
     })
   })
 
@@ -91,15 +92,15 @@ describe('SessionStore', () => {
     it('should create new session if not exists', () => {
       const session = store.getOrCreate('C123', '1234567890.123456')
 
-      expect(session.id).toBeDefined()
-      expect(session.slack_channel_id).toBe('C123')
+      assert.ok(session.id !== undefined, 'session.id should be defined')
+      assert.strictEqual(session.slack_channel_id, 'C123')
     })
 
     it('should return existing session if exists', () => {
       const first = store.getOrCreate('C123', '1234567890.123456')
       const second = store.getOrCreate('C123', '1234567890.123456')
 
-      expect(second.id).toBe(first.id)
+      assert.strictEqual(second.id, first.id)
     })
   })
 
@@ -113,7 +114,7 @@ describe('SessionStore', () => {
       store.updateAgentSessionId(session.id, 'agent-session-123')
 
       const updated = store.getById(session.id)
-      expect(updated?.agent_session_id).toBe('agent-session-123')
+      assert.strictEqual(updated?.agent_session_id, 'agent-session-123')
     })
   })
 
@@ -126,8 +127,8 @@ describe('SessionStore', () => {
 
       const deleted = store.deleteExpired(7)
 
-      expect(deleted).toBe(0)
-      expect(store.getByThread('C123', '1234567890.123456')).not.toBeNull()
+      assert.strictEqual(deleted, 0)
+      assert.notStrictEqual(store.getByThread('C123', '1234567890.123456'), null)
     })
   })
 })

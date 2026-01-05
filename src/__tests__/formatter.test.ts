@@ -1,51 +1,54 @@
-import { describe, expect, it } from '@jest/globals'
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { formatMarkdownForSlack } from '../slack/formatter.js'
 
 describe('formatMarkdownForSlack', () => {
   it('returns empty string for empty input', () => {
-    expect(formatMarkdownForSlack('')).toBe('')
+    assert.strictEqual(formatMarkdownForSlack(''), '')
   })
 
   it('returns null/undefined as-is', () => {
-    expect(formatMarkdownForSlack(null as unknown as string)).toBe(null)
-    expect(formatMarkdownForSlack(undefined as unknown as string)).toBe(undefined)
+    assert.strictEqual(formatMarkdownForSlack(null as unknown as string), null)
+    assert.strictEqual(formatMarkdownForSlack(undefined as unknown as string), undefined)
   })
 
   describe('bold conversion', () => {
     it('converts **bold** to *bold*', () => {
-      expect(formatMarkdownForSlack('This is **bold** text')).toBe('This is *bold* text')
+      assert.strictEqual(formatMarkdownForSlack('This is **bold** text'), 'This is *bold* text')
     })
 
     it('handles multiple bold sections', () => {
-      expect(formatMarkdownForSlack('**one** and **two**')).toBe('*one* and *two*')
+      assert.strictEqual(formatMarkdownForSlack('**one** and **two**'), '*one* and *two*')
     })
   })
 
   describe('italic conversion', () => {
     it('converts *italic* to _italic_', () => {
-      expect(formatMarkdownForSlack('This is *italic* text')).toBe('This is _italic_ text')
+      assert.strictEqual(formatMarkdownForSlack('This is *italic* text'), 'This is _italic_ text')
     })
 
     it('handles multiple italic sections', () => {
-      expect(formatMarkdownForSlack('*one* and *two*')).toBe('_one_ and _two_')
+      assert.strictEqual(formatMarkdownForSlack('*one* and *two*'), '_one_ and _two_')
     })
   })
 
   describe('strikethrough conversion', () => {
     it('converts ~~strike~~ to ~strike~', () => {
-      expect(formatMarkdownForSlack('This is ~~deleted~~ text')).toBe('This is ~deleted~ text')
+      assert.strictEqual(formatMarkdownForSlack('This is ~~deleted~~ text'), 'This is ~deleted~ text')
     })
   })
 
   describe('link conversion', () => {
     it('converts [text](url) to <url|text>', () => {
-      expect(formatMarkdownForSlack('Check [this link](https://example.com)')).toBe(
+      assert.strictEqual(
+        formatMarkdownForSlack('Check [this link](https://example.com)'),
         'Check <https://example.com|this link>',
       )
     })
 
     it('handles multiple links', () => {
-      expect(formatMarkdownForSlack('[one](http://1.com) and [two](http://2.com)')).toBe(
+      assert.strictEqual(
+        formatMarkdownForSlack('[one](http://1.com) and [two](http://2.com)'),
         '<http://1.com|one> and <http://2.com|two>',
       )
     })
@@ -53,15 +56,15 @@ describe('formatMarkdownForSlack', () => {
 
   describe('header conversion', () => {
     it('converts # header to *header*', () => {
-      expect(formatMarkdownForSlack('# Main Title')).toBe('*Main Title*')
+      assert.strictEqual(formatMarkdownForSlack('# Main Title'), '*Main Title*')
     })
 
     it('converts ## header to *header*', () => {
-      expect(formatMarkdownForSlack('## Section')).toBe('*Section*')
+      assert.strictEqual(formatMarkdownForSlack('## Section'), '*Section*')
     })
 
     it('converts ### header to *header*', () => {
-      expect(formatMarkdownForSlack('### Subsection')).toBe('*Subsection*')
+      assert.strictEqual(formatMarkdownForSlack('### Subsection'), '*Subsection*')
     })
 
     it('handles headers in multiline text', () => {
@@ -75,13 +78,13 @@ Some content
 Some content
 
 *Section*`
-      expect(formatMarkdownForSlack(input)).toBe(expected)
+      assert.strictEqual(formatMarkdownForSlack(input), expected)
     })
   })
 
   describe('code preservation', () => {
     it('preserves inline code', () => {
-      expect(formatMarkdownForSlack('Use `**bold**` syntax')).toBe('Use `**bold**` syntax')
+      assert.strictEqual(formatMarkdownForSlack('Use `**bold**` syntax'), 'Use `**bold**` syntax')
     })
 
     it('preserves code blocks', () => {
@@ -91,14 +94,14 @@ Some content
 *not italic*
 \`\`\`
 End`
-      expect(formatMarkdownForSlack(input)).toBe(input)
+      assert.strictEqual(formatMarkdownForSlack(input), input)
     })
 
     it('preserves code blocks with language', () => {
       const input = `\`\`\`typescript
 const x = **test**;
 \`\`\``
-      expect(formatMarkdownForSlack(input)).toBe(input)
+      assert.strictEqual(formatMarkdownForSlack(input), input)
     })
   })
 
@@ -114,7 +117,7 @@ const x = **test**;
 | foo  | 123   |
 \`\`\``
 
-      expect(formatMarkdownForSlack(input)).toBe(expected)
+      assert.strictEqual(formatMarkdownForSlack(input), expected)
     })
 
     it('handles table with surrounding text', () => {
@@ -136,7 +139,7 @@ And more text.`
 
 And more text.`
 
-      expect(formatMarkdownForSlack(input)).toBe(expected)
+      assert.strictEqual(formatMarkdownForSlack(input), expected)
     })
 
     it('does not double-wrap tables already in code blocks', () => {
@@ -146,7 +149,7 @@ And more text.`
 | foo  | 123   |
 \`\`\``
 
-      expect(formatMarkdownForSlack(input)).toBe(input)
+      assert.strictEqual(formatMarkdownForSlack(input), input)
     })
 
     it('handles multiple tables', () => {
@@ -174,7 +177,7 @@ Some text
 | 3 | 4 |
 \`\`\``
 
-      expect(formatMarkdownForSlack(input)).toBe(expected)
+      assert.strictEqual(formatMarkdownForSlack(input), expected)
     })
   })
 
@@ -192,7 +195,7 @@ This is *bold* and _italic_ with a <https://example.com|link>.
 
 ~deleted~ and \`code\``
 
-      expect(formatMarkdownForSlack(input)).toBe(expected)
+      assert.strictEqual(formatMarkdownForSlack(input), expected)
     })
   })
 })
