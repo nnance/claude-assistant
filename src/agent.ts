@@ -1,16 +1,8 @@
 import * as os from 'node:os'
+import * as path from 'node:path'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
-import { createAppleServicesMcpServer } from './tools/index.js'
-
-const SYSTEM_PROMPT = `You are an assistant AI agent with access to Apple Applications (Calendar, Notes) on the user's Mac.
-Use the provided tools to manage and retrieve information as needed to assist with the user's requests.
-
-# Key Information
-
-- Personal Information: Use Apple Note titled "Personal Information" for relevant personal details.
-- Professional Information: Use Apple Note titled "Professional Information" for relevant professional details.`
 
 export interface AgentResponse {
   response: string
@@ -63,12 +55,10 @@ function extractToolUsesFromMessage(msg: SDKMessage): ToolUseInfo[] {
 export class Agent {
   private config: AgentConfig
   private logger: Logger
-  private appleServicesMcp: ReturnType<typeof createAppleServicesMcpServer>
 
   constructor(config: AgentConfig, logger: Logger) {
     this.config = config
     this.logger = logger.child({ component: 'agent' })
-    this.appleServicesMcp = createAppleServicesMcpServer()
   }
 
   async send(
@@ -82,25 +72,22 @@ export class Agent {
       isResume ? 'Resuming session' : 'Creating new session',
     )
 
+    // Skills directory for Bash tool access (relative to project root)
+    const skillsDir = path.join(process.cwd(), '.claude', 'skills')
+
     const q = query({
       prompt: message,
       options: {
         model: this.config.model,
         maxTurns: this.config.maxTurns,
-        // Custom system prompt for Apple services assistant
-        systemPrompt: SYSTEM_PROMPT,
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
-        // Allow access to user's home directory and common locations
-        additionalDirectories: [os.homedir(), '/tmp', '/var'],
+        // Allow access to user's home directory, common locations, and skills
+        additionalDirectories: [os.homedir(), '/tmp', '/var', skillsDir],
         // Accept file edits without prompting (since this is a personal assistant)
         permissionMode: 'acceptEdits',
-        // Load user settings from ~/.claude/settings.json and .claude/settings.local.json
+        // Load user settings and skills from ~/.claude/
         settingSources: ['user', 'local'],
-        // Register Apple services MCP server for Calendar, Contacts, Notes tools
-        mcpServers: {
-          'apple-services': this.appleServicesMcp,
-        },
       },
     })
 
