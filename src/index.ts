@@ -20,8 +20,8 @@ async function main() {
   }
 
   // Initialize agent
-  const agent = createAgent(config.agent, logger)
-  logger.info({ model: config.agent.model }, 'Agent initialized')
+  const agent = createAgent(config.agent, logger, config.vaultPath)
+  logger.info({ model: config.agent.model, vaultEnabled: !!config.vaultPath }, 'Agent initialized')
 
   // Initialize Slack app
   const slackApp = createSlackApp({

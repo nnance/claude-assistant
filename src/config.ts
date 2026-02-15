@@ -31,6 +31,7 @@ export interface Config {
   agent: AgentConfig
   sessions: SessionConfig
   tools: ToolConfig
+  vaultPath?: string
   logLevel: string
 }
 
@@ -82,6 +83,8 @@ export function loadConfig(): Config {
         optionalEnv('TOOL_BROWSER_WHITELIST', '*.google.com,*.github.com,*.stackoverflow.com'),
       ),
     },
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
+    vaultPath: process.env['VAULT_PATH'] || undefined,
     logLevel: optionalEnv('LOG_LEVEL', 'info'),
   }
 }

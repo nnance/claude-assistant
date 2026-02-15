@@ -2,15 +2,8 @@ import * as os from 'node:os'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
-import { createAppleServicesMcpServer } from './tools/index.js'
-
-const SYSTEM_PROMPT = `You are an assistant AI agent with access to Apple Applications (Calendar, Notes) on the user's Mac.
-Use the provided tools to manage and retrieve information as needed to assist with the user's requests.
-
-# Key Information
-
-- Personal Information: Use Apple Note titled "Personal Information" for relevant personal details.
-- Professional Information: Use Apple Note titled "Professional Information" for relevant professional details.`
+import { buildSystemPrompt } from './system-prompt.js'
+import { createAppleServicesMcpServer, createVaultMcpServer } from './tools/index.js'
 
 export interface AgentResponse {
   response: string
@@ -64,11 +57,19 @@ export class Agent {
   private config: AgentConfig
   private logger: Logger
   private appleServicesMcp: ReturnType<typeof createAppleServicesMcpServer>
+  private vaultMcp: ReturnType<typeof createVaultMcpServer> | null
+  private systemPrompt: string
 
-  constructor(config: AgentConfig, logger: Logger) {
+  constructor(config: AgentConfig, logger: Logger, vaultPath?: string) {
     this.config = config
     this.logger = logger.child({ component: 'agent' })
     this.appleServicesMcp = createAppleServicesMcpServer()
+    this.vaultMcp = vaultPath ? createVaultMcpServer(vaultPath) : null
+    this.systemPrompt = buildSystemPrompt({ vaultEnabled: !!vaultPath })
+
+    if (vaultPath) {
+      this.logger.info({ vaultPath }, 'Vault tools enabled')
+    }
   }
 
   async send(
@@ -87,8 +88,7 @@ export class Agent {
       options: {
         model: this.config.model,
         maxTurns: this.config.maxTurns,
-        // Custom system prompt for Apple services assistant
-        systemPrompt: SYSTEM_PROMPT,
+        systemPrompt: this.systemPrompt,
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory and common locations
@@ -97,9 +97,10 @@ export class Agent {
         permissionMode: 'acceptEdits',
         // Load user settings from ~/.claude/settings.json and .claude/settings.local.json
         settingSources: ['user', 'local'],
-        // Register Apple services MCP server for Calendar, Contacts, Notes tools
+        // Register MCP servers for tools
         mcpServers: {
           'apple-services': this.appleServicesMcp,
+          ...(this.vaultMcp ? { 'vault-tools': this.vaultMcp } : {}),
         },
       },
     })
@@ -156,6 +157,6 @@ export class Agent {
   }
 }
 
-export function createAgent(config: AgentConfig, logger: Logger): Agent {
-  return new Agent(config, logger)
+export function createAgent(config: AgentConfig, logger: Logger, vaultPath?: string): Agent {
+  return new Agent(config, logger, vaultPath)
 }
