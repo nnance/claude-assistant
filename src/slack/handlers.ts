@@ -474,10 +474,10 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
         await deleteMessage(client, messageEvent.channel, progressTs, handlerLogger)
       }
 
-      // Send response (in thread if replying to thread, otherwise as new message)
+      // Send response in thread (matches session key for context continuity)
       await client.chat.postMessage({
         channel: messageEvent.channel,
-        thread_ts: messageEvent.thread_ts,
+        thread_ts: threadTs,
         text: formatMarkdownForSlack(result.response),
       })
 
@@ -497,7 +497,7 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
       // Send error message
       await client.chat.postMessage({
         channel: messageEvent.channel,
-        thread_ts: messageEvent.thread_ts,
+        thread_ts: threadTs,
         text: 'Sorry, I encountered an error processing your request. Please try again.',
       })
     }
