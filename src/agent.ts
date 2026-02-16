@@ -1,18 +1,20 @@
 import * as os from 'node:os'
+import * as path from 'node:path'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
 import type { MemoryExtractor, SlackContext } from './memory/index.js'
 import type { MemoryStore } from './memory/index.js'
-import { createAppleServicesMcpServer } from './tools/index.js'
 
-const SYSTEM_PROMPT = `You are an assistant AI agent with access to Apple Applications (Calendar, Notes) on the user's Mac.
-Use the provided tools to manage and retrieve information as needed to assist with the user's requests.
+const SYSTEM_PROMPT = `You are an assistant AI agent running as a macOS daemon, communicating via Slack.
+
+You have access to skills defined in .claude/skills/ that extend your capabilities.
+Use the provided tools to assist with the user's requests.
 
 # Key Information
 
-- Personal Information: Use Apple Note titled "Personal Information" for relevant personal details.
-- Professional Information: Use Apple Note titled "Professional Information" for relevant professional details.`
+Notes in the Reference folder of the vault contain important personal and professional information.
+Read these notes when you need context about the user.`
 
 export interface AgentResponse {
   response: string
@@ -65,7 +67,6 @@ function extractToolUsesFromMessage(msg: SDKMessage): ToolUseInfo[] {
 export class Agent {
   private config: AgentConfig
   private logger: Logger
-  private appleServicesMcp: ReturnType<typeof createAppleServicesMcpServer>
   private memoryStore: MemoryStore | null
   private memoryExtractor: MemoryExtractor | null
 
@@ -77,7 +78,6 @@ export class Agent {
   ) {
     this.config = config
     this.logger = logger.child({ component: 'agent' })
-    this.appleServicesMcp = createAppleServicesMcpServer()
     this.memoryStore = memoryStore ?? null
     this.memoryExtractor = memoryExtractor ?? null
   }
@@ -111,6 +111,9 @@ ${SYSTEM_PROMPT}`
       isResume ? 'Resuming session' : 'Creating new session',
     )
 
+    // Skills directory for Bash tool access (relative to project root)
+    const skillsDir = path.join(process.cwd(), '.claude', 'skills')
+
     const q = query({
       prompt: message,
       options: {
@@ -120,16 +123,12 @@ ${SYSTEM_PROMPT}`
         systemPrompt: this.buildSystemPrompt(),
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
-        // Allow access to user's home directory and common locations
-        additionalDirectories: [os.homedir(), '/tmp', '/var'],
+        // Allow access to user's home directory, common locations, and skills
+        additionalDirectories: [os.homedir(), '/tmp', '/var', skillsDir],
         // Accept file edits without prompting (since this is a personal assistant)
         permissionMode: 'acceptEdits',
-        // Load user settings from ~/.claude/settings.json and .claude/settings.local.json
+        // Load user settings and skills from ~/.claude/
         settingSources: ['user', 'local'],
-        // Register Apple services MCP server for Calendar, Contacts, Notes tools
-        mcpServers: {
-          'apple-services': this.appleServicesMcp,
-        },
       },
     })
 
