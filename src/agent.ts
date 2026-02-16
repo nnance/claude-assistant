@@ -21,7 +21,7 @@ Only use file grep, file search, or direct file access when the user's intent is
 
 # Key Information
 
-Notes in the Reference folder of the vault contain important personal and professional information.
+Use the vault skills to accesss notes in the Reference folder for important personal and professional information of the user.
 Read these notes when you need context about the user.`
 
 export interface AgentResponse {
