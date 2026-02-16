@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals'
+import { afterEach, beforeEach, describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { loadConfig } from '../config.js'
 
 describe('loadConfig', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
-    jest.resetModules()
     process.env = {
       ...originalEnv,
       SLACK_BOT_TOKEN: 'xoxb-test-token',
@@ -22,9 +22,9 @@ describe('loadConfig', () => {
   it('should load config with required environment variables', () => {
     const config = loadConfig()
 
-    expect(config.slack.botToken).toBe('xoxb-test-token')
-    expect(config.slack.appToken).toBe('xapp-test-token')
-    expect(config.slack.signingSecret).toBe('test-secret')
+    assert.strictEqual(config.slack.botToken, 'xoxb-test-token')
+    assert.strictEqual(config.slack.appToken, 'xapp-test-token')
+    assert.strictEqual(config.slack.signingSecret, 'test-secret')
   })
 
   it('should use default values when optional variables are not set', () => {
@@ -33,10 +33,10 @@ describe('loadConfig', () => {
     process.env['AGENT_MODEL'] = undefined
     const config = loadConfig()
 
-    expect(config.agent.model).toBe('claude-sonnet-4-5-20250929')
-    expect(config.agent.maxTurns).toBe(50)
-    expect(config.sessions.databasePath).toBe('./data/sessions.db')
-    expect(config.sessions.expireDays).toBe(7)
+    assert.strictEqual(config.agent.model, 'claude-sonnet-4-5-20250929')
+    assert.strictEqual(config.agent.maxTurns, 50)
+    assert.strictEqual(config.sessions.databasePath, './data/sessions.db')
+    assert.strictEqual(config.sessions.expireDays, 7)
   })
 
   it('should parse comma-separated tool config', () => {
@@ -47,8 +47,8 @@ describe('loadConfig', () => {
 
     const config = loadConfig()
 
-    expect(config.tools.shellAllowedCommands).toEqual(['git', 'npm', 'ls'])
-    expect(config.tools.browserWhitelist).toEqual(['*.example.com', '*.test.com'])
+    assert.deepStrictEqual(config.tools.shellAllowedCommands, ['git', 'npm', 'ls'])
+    assert.deepStrictEqual(config.tools.browserWhitelist, ['*.example.com', '*.test.com'])
   })
 
   it('should handle wildcard for shell commands', () => {
@@ -57,13 +57,16 @@ describe('loadConfig', () => {
 
     const config = loadConfig()
 
-    expect(config.tools.shellAllowedCommands).toEqual(['*'])
+    assert.deepStrictEqual(config.tools.shellAllowedCommands, ['*'])
   })
 
   it('should throw error for missing required environment variables', () => {
     // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
     process.env['SLACK_BOT_TOKEN'] = undefined
 
-    expect(() => loadConfig()).toThrow('Missing required environment variable: SLACK_BOT_TOKEN')
+    assert.throws(
+      () => loadConfig(),
+      { message: /Missing required environment variable: SLACK_BOT_TOKEN/ },
+    )
   })
 })
