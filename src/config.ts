@@ -26,11 +26,17 @@ export interface ToolConfig {
   browserWhitelist: string[]
 }
 
+export interface MemoryConfig {
+  memoryPath: string
+  enabled: boolean
+}
+
 export interface Config {
   slack: SlackConfig
   agent: AgentConfig
   sessions: SessionConfig
   tools: ToolConfig
+  memory: MemoryConfig
   logLevel: string
 }
 
@@ -81,6 +87,10 @@ export function loadConfig(): Config {
       browserWhitelist: parseCommaSeparated(
         optionalEnv('TOOL_BROWSER_WHITELIST', '*.google.com,*.github.com,*.stackoverflow.com'),
       ),
+    },
+    memory: {
+      memoryPath: optionalEnv('MEMORY_PATH', 'data/memory'),
+      enabled: optionalEnv('MEMORY_ENABLED', 'true') === 'true',
     },
     logLevel: optionalEnv('LOG_LEVEL', 'info'),
   }

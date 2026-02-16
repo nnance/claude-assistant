@@ -2,6 +2,8 @@ import * as os from 'node:os'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
+import type { MemoryExtractor, SlackContext } from './memory/index.js'
+import type { MemoryStore } from './memory/index.js'
 import { createAppleServicesMcpServer } from './tools/index.js'
 
 const SYSTEM_PROMPT = `You are an assistant AI agent with access to Apple Applications (Calendar, Notes) on the user's Mac.
@@ -64,17 +66,44 @@ export class Agent {
   private config: AgentConfig
   private logger: Logger
   private appleServicesMcp: ReturnType<typeof createAppleServicesMcpServer>
+  private memoryStore: MemoryStore | null
+  private memoryExtractor: MemoryExtractor | null
 
-  constructor(config: AgentConfig, logger: Logger) {
+  constructor(
+    config: AgentConfig,
+    logger: Logger,
+    memoryStore?: MemoryStore,
+    memoryExtractor?: MemoryExtractor,
+  ) {
     this.config = config
     this.logger = logger.child({ component: 'agent' })
     this.appleServicesMcp = createAppleServicesMcpServer()
+    this.memoryStore = memoryStore ?? null
+    this.memoryExtractor = memoryExtractor ?? null
+  }
+
+  private buildSystemPrompt(): string {
+    if (!this.memoryStore) return SYSTEM_PROMPT
+
+    const memoryContext = this.memoryStore.getMemoryContext()
+    if (!memoryContext) return SYSTEM_PROMPT
+
+    return `# Cross-Thread Memory
+
+The following memories were extracted from recent conversations. Use them for context but do not mention the memory system to the user unless asked.
+
+${memoryContext}
+
+---
+
+${SYSTEM_PROMPT}`
   }
 
   async send(
     message: string,
     existingSessionId?: string | null,
     onProgress?: ProgressCallback,
+    slackContext?: SlackContext,
   ): Promise<AgentResponse> {
     const isResume = !!existingSessionId
     this.logger.info(
@@ -87,8 +116,8 @@ export class Agent {
       options: {
         model: this.config.model,
         maxTurns: this.config.maxTurns,
-        // Custom system prompt for Apple services assistant
-        systemPrompt: SYSTEM_PROMPT,
+        // Custom system prompt with memory context injected
+        systemPrompt: this.buildSystemPrompt(),
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory and common locations
@@ -145,6 +174,15 @@ export class Agent {
         'Received response from Claude',
       )
 
+      // Fire-and-forget memory extraction
+      if (this.memoryExtractor && slackContext) {
+        this.memoryExtractor.extractAndStore({
+          userMessage: message,
+          agentResponse: responseText,
+          slackContext,
+        })
+      }
+
       return {
         response: responseText,
         sessionId: sdkSessionId,
@@ -156,6 +194,11 @@ export class Agent {
   }
 }
 
-export function createAgent(config: AgentConfig, logger: Logger): Agent {
-  return new Agent(config, logger)
+export function createAgent(
+  config: AgentConfig,
+  logger: Logger,
+  memoryStore?: MemoryStore,
+  memoryExtractor?: MemoryExtractor,
+): Agent {
+  return new Agent(config, logger, memoryStore, memoryExtractor)
 }
