@@ -8,6 +8,7 @@ A self-hosted personal AI assistant built on the Anthropic SDK, running as a dae
 - **Persistent Sessions** - Conversations maintain context within threads
 - **macOS Daemon** - Runs as a launchd service with automatic restart
 - **SQLite Storage** - Session persistence across daemon restarts
+- **Extensible Skills** - Apple services, Obsidian vault, and memory extraction (see [SKILLS.md](SKILLS.md))
 
 ## Prerequisites
 

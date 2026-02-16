@@ -6,8 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
+    "start": "node --env-file=.env dist/index.js",
+    "dev": "NODE_OPTIONS='--env-file=.env' tsx watch src/index.ts",
     "lint": "biome check src",
     "lint:fix": "biome check --write src",
     "test": "tsx --test src/__tests__/*.test.ts",
@@ -17,7 +17,6 @@
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
     "@slack/bolt": "^4.1.0",
     "better-sqlite3": "^11.6.0",
-    "dotenv": "^16.4.7",
     "pino": "^9.5.0",
     "pino-pretty": "^13.0.0",
     "zod": "^4.3.5"

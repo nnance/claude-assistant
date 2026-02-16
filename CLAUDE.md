@@ -53,3 +53,13 @@ Copy `.env.example` to `.env`. Required variables:
 - `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_SIGNING_SECRET`
 
 See `.env.example` for optional configuration (model, timeouts, session expiry).
+
+## Skills
+
+Skills are located in `.claude/skills/`. Each skill has a `SKILL.md` file with YAML frontmatter and markdown instructions.
+
+**When adding or modifying skills:**
+1. Follow [Anthropic's skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+2. Use gerund naming (e.g., `managing-vault`, not `vault`)
+3. Write descriptions in third person with trigger phrases
+4. Update `SKILLS.md` registry with the new/changed skill details

@@ -1,7 +1,4 @@
-import { config as dotenvConfig } from 'dotenv'
 import pino from 'pino'
-
-dotenvConfig()
 
 export interface SlackConfig {
   botToken: string
