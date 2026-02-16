@@ -4,6 +4,16 @@ import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
 
+const SYSTEM_PROMPT = `You are an assistant AI agent running as a macOS daemon, communicating via Slack.
+
+You have access to skills defined in .claude/skills/ that extend your capabilities.
+Use the provided tools to assist with the user's requests.
+
+# Key Information
+
+- Personal Information: Read the vault note titled "Personal Information" for relevant personal details.
+- Professional Information: Read the vault note titled "Professional Information" for relevant professional details.`
+
 export interface AgentResponse {
   response: string
   sessionId: string
@@ -80,6 +90,7 @@ export class Agent {
       options: {
         model: this.config.model,
         maxTurns: this.config.maxTurns,
+        systemPrompt: SYSTEM_PROMPT,
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory, common locations, and skills
