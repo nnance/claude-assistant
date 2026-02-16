@@ -129,8 +129,9 @@ ${SYSTEM_PROMPT}`
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory, common locations, and skills
         additionalDirectories: [os.homedir(), '/tmp', '/var'],
-        // Accept file edits without prompting (since this is a personal assistant)
-        permissionMode: 'acceptEdits',
+        // Bypass all permission checks (trusted personal assistant)
+        permissionMode: 'bypassPermissions',
+        allowDangerouslySkipPermissions: true,
         // Load user settings and skills from ~/.claude/
         settingSources: ['user', 'local', 'project'],
       },
