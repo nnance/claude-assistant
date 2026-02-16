@@ -1,83 +1,83 @@
 ---
-name: apple-services
-version: 1.0.0
-description: Access to Apple Applications (Calendar, Contacts, Notes) on macOS
+name: managing-apple-services
+description: Manages Apple Calendar, Contacts, and Notes on macOS via shell scripts. Use when the user asks about calendar events, scheduling, contacts, phone numbers, or notes. Triggers on mentions of appointments, meetings, reminders, contact lookup, or personal/professional information stored in Notes.
 ---
 
-# Apple Services Assistant
+# Apple Services
 
-You are an assistant AI agent with access to Apple Applications (Calendar, Contacts, Notes) on the user's Mac.
-Use the shell scripts in `.claude/skills/apple-services/scripts/` to manage and retrieve information as needed.
+Interact with Apple Calendar, Contacts, and Notes using the scripts in this skill's `scripts/` directory.
 
-## Key Information
+## Key Information Sources
 
-- Personal Information: Use Apple Note titled "Personal Information" for relevant personal details.
-- Professional Information: Use Apple Note titled "Professional Information" for relevant professional details.
+- **Personal Information**: Apple Note titled "Personal Information"
+- **Professional Information**: Apple Note titled "Professional Information"
 
-## Available Scripts
+## Calendar
 
-### Calendar (`.claude/skills/apple-services/scripts/calendar.sh`)
+Script: `.claude/skills/apple-services/scripts/calendar.sh`
 
-Manage Apple Calendar events and calendars.
-
-**Actions:**
-- `calendar.sh list` - List all available calendars
-- `calendar.sh events [calendar] [days]` - List upcoming events (default: 7 days from default calendar)
-- `calendar.sh search <query> [calendar] [days]` - Search events by title/description (default: 90 days)
-- `calendar.sh create <calendar> <title> <start> <end> [description]` - Create an event (dates: "MM/DD/YYYY HH:MM:SS")
-- `calendar.sh delete <calendar> <title>` - Delete an event by title
-- `calendar.sh today` - Get today's events from the default calendar
-- `calendar.sh details <calendar> <title>` - Get detailed event information
-
-**Examples:**
 ```bash
-calendar.sh list
-calendar.sh events "Work" 14
-calendar.sh search "meeting" "Work" 30
-calendar.sh create "Work" "Team Standup" "01/15/2025 09:00:00" "01/15/2025 09:30:00" "Daily standup"
-calendar.sh delete "Work" "Team Standup"
-calendar.sh today
-calendar.sh details "Work" "Team Meeting"
+# List calendars
+.claude/skills/apple-services/scripts/calendar.sh list
+
+# Get today's events
+.claude/skills/apple-services/scripts/calendar.sh today
+
+# List events (optional: calendar name, days ahead)
+.claude/skills/apple-services/scripts/calendar.sh events "Work" 14
+
+# Search events (required: query; optional: calendar, days)
+.claude/skills/apple-services/scripts/calendar.sh search "meeting" "Work" 30
+
+# Create event (dates: "MM/DD/YYYY HH:MM:SS")
+.claude/skills/apple-services/scripts/calendar.sh create "Work" "Team Standup" "01/15/2025 09:00:00" "01/15/2025 09:30:00" "Daily standup"
+
+# Get event details
+.claude/skills/apple-services/scripts/calendar.sh details "Work" "Team Meeting"
+
+# Delete event
+.claude/skills/apple-services/scripts/calendar.sh delete "Work" "Team Standup"
 ```
 
-### Contacts (`.claude/skills/apple-services/scripts/contacts.sh`)
+## Contacts
 
-Manage Apple Contacts.
+Script: `.claude/skills/apple-services/scripts/contacts.sh`
 
-**Actions:**
-- `contacts.sh search <query>` - Search contacts by name or organization
-- `contacts.sh create <name> [email] [phone] [organization] [birthday]` - Create a new contact
-- `contacts.sh list` - List all contacts
-- `contacts.sh get <name>` - Get a specific contact by name
-
-**Examples:**
 ```bash
-contacts.sh search "John"
-contacts.sh create "Jane Doe" "jane@example.com" "555-1234" "Acme Corp" "January 15, 1990"
-contacts.sh list
-contacts.sh get "Jane Doe"
+# Search contacts
+.claude/skills/apple-services/scripts/contacts.sh search "John"
+
+# Get specific contact
+.claude/skills/apple-services/scripts/contacts.sh get "Jane Doe"
+
+# List all contacts
+.claude/skills/apple-services/scripts/contacts.sh list
+
+# Create contact (name required; email, phone, org, birthday optional)
+.claude/skills/apple-services/scripts/contacts.sh create "Jane Doe" "jane@example.com" "555-1234" "Acme Corp" "January 15, 1990"
 ```
 
-### Notes (`.claude/skills/apple-services/scripts/notes.sh`)
+## Notes
 
-Manage Apple Notes.
+Script: `.claude/skills/apple-services/scripts/notes.sh`
 
-**Actions:**
-- `notes.sh search <query>` - Search notes by title or content
-- `notes.sh create <title> [body]` - Create a new note
-- `notes.sh edit <title> <new_body>` - Edit an existing note (replaces body)
-- `notes.sh list` - List all notes
-- `notes.sh get <title>` - Get the content of a specific note
-
-**Examples:**
 ```bash
-notes.sh search "meeting"
-notes.sh create "Shopping List" "Milk, Eggs, Bread"
-notes.sh edit "Shopping List" "Milk, Eggs, Bread, Butter"
-notes.sh list
-notes.sh get "Personal Information"
+# Get note content
+.claude/skills/apple-services/scripts/notes.sh get "Personal Information"
+
+# Search notes
+.claude/skills/apple-services/scripts/notes.sh search "meeting"
+
+# List all notes
+.claude/skills/apple-services/scripts/notes.sh list
+
+# Create note
+.claude/skills/apple-services/scripts/notes.sh create "Shopping List" "Milk, Eggs, Bread"
+
+# Edit note (replaces body)
+.claude/skills/apple-services/scripts/notes.sh edit "Shopping List" "Milk, Eggs, Bread, Butter"
 ```
 
 ## Output Format
 
-All scripts output JSON for structured data. Errors are returned as JSON with an `error` field and exit code 1.
+All scripts return JSON. Errors include an `error` field with exit code 1.
