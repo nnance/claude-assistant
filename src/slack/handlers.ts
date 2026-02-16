@@ -332,6 +332,7 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
         messageText,
         session.agent_session_id,
         progressUpdater.callback,
+        { channelId: mentionEvent.channel, threadTs: threadTs },
       )
 
       // Store the SDK session ID for future resumption
@@ -458,6 +459,7 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
         messageText,
         session.agent_session_id,
         progressUpdater.callback,
+        { channelId: messageEvent.channel, threadTs: threadTs },
       )
 
       // Store the SDK session ID for future resumption

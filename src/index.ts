@@ -1,5 +1,6 @@
 import { createAgent } from './agent.js'
 import { createLogger, loadConfig } from './config.js'
+import { MemoryExtractor, MemoryStore } from './memory/index.js'
 import { SessionStore } from './sessions/store.js'
 import { createSlackApp } from './slack/app.js'
 
@@ -19,8 +20,19 @@ async function main() {
     logger.info({ expiredCount }, 'Cleaned up expired sessions')
   }
 
+  // Initialize memory system
+  let memoryStore: MemoryStore | undefined
+  let memoryExtractor: MemoryExtractor | undefined
+
+  if (config.memory.enabled) {
+    memoryStore = new MemoryStore(config.memory.memoryPath)
+    memoryStore.ensureDirectories()
+    memoryExtractor = new MemoryExtractor(memoryStore, logger)
+    logger.info({ memoryPath: config.memory.memoryPath }, 'Memory system initialized')
+  }
+
   // Initialize agent
-  const agent = createAgent(config.agent, logger)
+  const agent = createAgent(config.agent, logger, memoryStore, memoryExtractor)
   logger.info({ model: config.agent.model }, 'Agent initialized')
 
   // Initialize Slack app
