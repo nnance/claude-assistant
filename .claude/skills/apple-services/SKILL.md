@@ -3,6 +3,8 @@ name: apple-services
 version: 1.0.0
 description: Access to Apple Applications (Calendar, Contacts, Notes) on macOS
 platform: darwin
+disable-model-invocation: true
+user-invocable: false
 ---
 
 # Apple Services Assistant
