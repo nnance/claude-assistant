@@ -1,5 +1,4 @@
 import * as os from 'node:os'
-import * as path from 'node:path'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
@@ -119,9 +118,6 @@ ${SYSTEM_PROMPT}`
       isResume ? 'Resuming session' : 'Creating new session',
     )
 
-    // Skills directory for Bash tool access (relative to project root)
-    const skillsDir = path.join(process.cwd(), '.claude', 'skills')
-
     const q = query({
       prompt: message,
       options: {
@@ -132,11 +128,11 @@ ${SYSTEM_PROMPT}`
         // Resume existing session if we have one
         ...(existingSessionId ? { resume: existingSessionId } : {}),
         // Allow access to user's home directory, common locations, and skills
-        additionalDirectories: [os.homedir(), '/tmp', '/var', skillsDir],
+        additionalDirectories: [os.homedir(), '/tmp', '/var'],
         // Accept file edits without prompting (since this is a personal assistant)
         permissionMode: 'acceptEdits',
         // Load user settings and skills from ~/.claude/
-        settingSources: ['user', 'local'],
+        settingSources: ['user', 'local', 'project'],
       },
     })
 
