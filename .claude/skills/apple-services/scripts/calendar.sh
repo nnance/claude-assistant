@@ -45,11 +45,11 @@ do_events() {
   escaped_calendar=$(escape_applescript "$calendar")
 
   local script="tell application \"Calendar\"
-    set startDate to (current date)
+    set startDate to (current date) - (time of (current date))
     set targetDate to startDate + ($days * days)
     set eventList to \"\"
     tell calendar \"$escaped_calendar\"
-      set filteredEvents to (events whose start date >= startDate and start date <= targetDate)
+      set filteredEvents to (events whose start date >= startDate and start date < targetDate)
       repeat with e in filteredEvents
         if eventList is not \"\" then
           set eventList to eventList & \"$RECORD_DELIMITER\"
@@ -71,9 +71,8 @@ do_events() {
     return
   fi
 
-  # Parse delimited output to JSON
-  echo "$result" | awk -F"$FIELD_DELIMITER" -v RS="$RECORD_DELIMITER" '
-  BEGIN { printf "[\n" }
+  # Parse delimited output to JSON (use literal string delimiter, not regex)
+  echo "$result" | awk 'BEGIN { FS="\\|\\|\\|"; RS=":::"; printf "[\n" }
   NR > 1 { printf ",\n" }
   {
     gsub(/^[ \t\n]+|[ \t\n]+$/, "", $1)
@@ -107,10 +106,10 @@ do_search() {
 
   local script="tell application \"Calendar\"
     set searchResults to \"\"
-    set startDate to (current date)
+    set startDate to (current date) - (time of (current date))
     set endDate to startDate + ($days * days)
     tell calendar \"$escaped_calendar\"
-      set filteredEvents to (events whose start date >= startDate and start date <= endDate)
+      set filteredEvents to (events whose start date >= startDate and start date < endDate)
       repeat with e in filteredEvents
         if (summary of e contains \"$escaped_query\") or (description of e contains \"$escaped_query\") then
           if searchResults is not \"\" then
@@ -134,9 +133,8 @@ do_search() {
     return
   fi
 
-  # Parse delimited output to JSON
-  echo "$result" | awk -F"$FIELD_DELIMITER" -v RS="$RECORD_DELIMITER" '
-  BEGIN { printf "[\n" }
+  # Parse delimited output to JSON (use literal string delimiter, not regex)
+  echo "$result" | awk 'BEGIN { FS="\\|\\|\\|"; RS=":::"; printf "[\n" }
   NR > 1 { printf ",\n" }
   {
     gsub(/^[ \t\n]+|[ \t\n]+$/, "", $1)

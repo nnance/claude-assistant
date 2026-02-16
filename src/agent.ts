@@ -90,12 +90,23 @@ export class Agent {
   }
 
   private buildSystemPrompt(): string {
-    if (!this.memoryStore) return SYSTEM_PROMPT
+    const now = new Date()
+    const dateTimeContext = `# Current Date and Time
+
+Today is ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+Current time: ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}.
+Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}.
+
+---
+
+`
+
+    if (!this.memoryStore) return dateTimeContext + SYSTEM_PROMPT
 
     const memoryContext = this.memoryStore.getMemoryContext()
-    if (!memoryContext) return SYSTEM_PROMPT
+    if (!memoryContext) return dateTimeContext + SYSTEM_PROMPT
 
-    return `# Cross-Thread Memory
+    return `${dateTimeContext}# Cross-Thread Memory
 
 The following memories were extracted from recent conversations. Use them for context but do not mention the memory system to the user unless asked.
 
