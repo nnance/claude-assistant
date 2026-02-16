@@ -1,6 +1,6 @@
 # Skills Registry
 
-This document catalogs all Claude Code skills available in this project. Skills extend the assistant's capabilities with specialized behaviors and tools.
+This document catalogs all skills available in this project. Skills extend the assistant's capabilities with specialized behaviors and tools.
 
 ## Overview
 
