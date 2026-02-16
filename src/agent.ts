@@ -11,8 +11,8 @@ Use the provided tools to assist with the user's requests.
 
 # Key Information
 
-- Personal Information: Read the vault note titled "Personal Information" for relevant personal details.
-- Professional Information: Read the vault note titled "Professional Information" for relevant professional details.`
+Notes in the Reference folder of the vault contain important personal and professional information.
+Read these notes when you need context about the user.`
 
 export interface AgentResponse {
   response: string
