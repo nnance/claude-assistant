@@ -59,6 +59,9 @@ apple-services contacts list
 
 # Create contact (name required; email, phone, org, birthday optional)
 apple-services contacts create "Jane Doe" "jane@example.com" "555-1234" "Acme Corp" "January 15, 1990"
+
+# Delete contact by name
+apple-services contacts delete "Jane Doe"
 ```
 
 ## Notes
