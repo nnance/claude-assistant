@@ -1,11 +1,13 @@
 ---
 name: managing-apple-services
-description: Manages Apple Calendar, Contacts, and Notes on macOS via shell scripts. Use when the user asks about calendar events, scheduling, contacts, phone numbers, or notes. Triggers on mentions of appointments, meetings, reminders, contact lookup, or personal/professional information stored in Notes.
+description: Manages Apple Calendar, Contacts, and Notes on macOS via shell scripts and a native CLI. Use when the user asks about calendar events, scheduling, contacts, phone numbers, or notes. Triggers on mentions of appointments, meetings, reminders, contact lookup, or personal/professional information stored in Notes.
 ---
 
 # Apple Services
 
-Interact with Apple Calendar, Contacts, and Notes using the scripts in this skill's `scripts/` directory.
+Interact with Apple Calendar, Contacts, and Notes. Calendar and Contacts use a native Swift CLI (`apple-services`) for performance, with shell script fallbacks. Notes uses shell scripts.
+
+**Execution rule:** For Calendar and Contacts commands, try the binary first. If it fails with "command not found" or is not installed, fall back to the corresponding shell script. The argument signatures are identical.
 
 ## Key Information Sources
 
@@ -14,47 +16,49 @@ Interact with Apple Calendar, Contacts, and Notes using the scripts in this skil
 
 ## Calendar
 
-Script: `.claude/skills/apple-services/scripts/calendar.sh`
+Binary: `apple-services calendar <action> [args...]`
+Fallback: `.claude/skills/apple-services/scripts/calendar.sh <action> [args...]`
 
 ```bash
 # List calendars
-.claude/skills/apple-services/scripts/calendar.sh list
+apple-services calendar list
 
 # Get today's events
-.claude/skills/apple-services/scripts/calendar.sh today
+apple-services calendar today
 
 # List events (optional: calendar name, days ahead)
-.claude/skills/apple-services/scripts/calendar.sh events "Work" 14
+apple-services calendar events "Work" 14
 
 # Search events (required: query; optional: calendar, days)
-.claude/skills/apple-services/scripts/calendar.sh search "meeting" "Work" 30
+apple-services calendar search "meeting" "Work" 30
 
 # Create event (dates: "MM/DD/YYYY HH:MM:SS")
-.claude/skills/apple-services/scripts/calendar.sh create "Work" "Team Standup" "01/15/2025 09:00:00" "01/15/2025 09:30:00" "Daily standup"
+apple-services calendar create "Work" "Team Standup" "01/15/2025 09:00:00" "01/15/2025 09:30:00" "Daily standup"
 
 # Get event details
-.claude/skills/apple-services/scripts/calendar.sh details "Work" "Team Meeting"
+apple-services calendar details "Work" "Team Meeting"
 
 # Delete event
-.claude/skills/apple-services/scripts/calendar.sh delete "Work" "Team Standup"
+apple-services calendar delete "Work" "Team Standup"
 ```
 
 ## Contacts
 
-Script: `.claude/skills/apple-services/scripts/contacts.sh`
+Binary: `apple-services contacts <action> [args...]`
+Fallback: `.claude/skills/apple-services/scripts/contacts.sh <action> [args...]`
 
 ```bash
 # Search contacts
-.claude/skills/apple-services/scripts/contacts.sh search "John"
+apple-services contacts search "John"
 
 # Get specific contact
-.claude/skills/apple-services/scripts/contacts.sh get "Jane Doe"
+apple-services contacts get "Jane Doe"
 
 # List all contacts
-.claude/skills/apple-services/scripts/contacts.sh list
+apple-services contacts list
 
 # Create contact (name required; email, phone, org, birthday optional)
-.claude/skills/apple-services/scripts/contacts.sh create "Jane Doe" "jane@example.com" "555-1234" "Acme Corp" "January 15, 1990"
+apple-services contacts create "Jane Doe" "jane@example.com" "555-1234" "Acme Corp" "January 15, 1990"
 ```
 
 ## Notes
@@ -80,4 +84,4 @@ Script: `.claude/skills/apple-services/scripts/notes.sh`
 
 ## Output Format
 
-All scripts return JSON. Errors include an `error` field with exit code 1.
+All commands return JSON. Errors include an `error` field with exit code 1.
