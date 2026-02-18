@@ -32,6 +32,11 @@ export class SessionStore {
 
       CREATE INDEX IF NOT EXISTS idx_thread
         ON sessions(slack_channel_id, slack_thread_ts);
+
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
     `)
   }
 
@@ -119,6 +124,21 @@ export class SessionStore {
     `)
     const result = stmt.run(expireDays)
     return result.changes
+  }
+
+  getSetting(key: string): string | null {
+    const stmt = this.db.prepare<[string], { value: string }>(`
+      SELECT value FROM settings WHERE key = ?
+    `)
+    const row = stmt.get(key)
+    return row ? row.value : null
+  }
+
+  setSetting(key: string, value: string): void {
+    const stmt = this.db.prepare(`
+      INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)
+    `)
+    stmt.run(key, value)
   }
 
   close(): void {

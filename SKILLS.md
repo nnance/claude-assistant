@@ -8,6 +8,7 @@ This document catalogs all skills available in this project. Skills extend the a
 |-------|-------------|-----------------|
 | [managing-apple-services](#managing-apple-services) | macOS Calendar, Contacts, Notes | "calendar", "schedule", "contacts", "notes" |
 | [managing-vault](#managing-vault) | Obsidian vault note management | "save a note", "add to vault", "show my tasks" |
+| [scheduling](#scheduling) | Scheduled tasks and reminders | "remind me", "schedule", "every morning", "recurring" |
 | [memory](#memory) | Cross-thread memory extraction | (automatic, not user-invoked) |
 
 ## Skills
@@ -57,6 +58,29 @@ This document catalogs all skills available in this project. Skills extend the a
 - `references/tags.md` - Tag system documentation
 - `references/note-format.md` - Note formatting standards
 - `references/examples.md` - Usage examples
+
+---
+
+### scheduling
+
+**Location**: `.claude/skills/scheduling/`
+
+**Description**: Manages scheduled tasks and reminders using a SQLite-backed scheduler.
+
+**Triggers**:
+- "remind me in 5 minutes", "remind me tomorrow at 9am"
+- "schedule a recurring task", "every weekday morning"
+- "show my scheduled jobs", "pause that reminder"
+
+**Capabilities**:
+- Create one-shot reminders (fire once at a specific time)
+- Create recurring jobs (fire on a cron schedule)
+- List, pause, resume, and delete scheduled jobs
+
+**Scripts**:
+- `scripts/scheduler.sh` - CRUD operations on the scheduler SQLite database
+
+**Configuration**: Requires `PROACTIVE_ENABLED=true` in environment.
 
 ---
 

@@ -28,12 +28,22 @@ export interface MemoryConfig {
   enabled: boolean
 }
 
+export interface ProactiveConfig {
+  enabled: boolean
+  heartbeatIntervalMinutes: number
+  activeHoursStart: number
+  activeHoursEnd: number
+  heartbeatPath: string
+  schedulerDatabasePath: string
+}
+
 export interface Config {
   slack: SlackConfig
   agent: AgentConfig
   sessions: SessionConfig
   tools: ToolConfig
   memory: MemoryConfig
+  proactive: ProactiveConfig
   logLevel: string
 }
 
@@ -88,6 +98,17 @@ export function loadConfig(): Config {
     memory: {
       memoryPath: optionalEnv('MEMORY_PATH', 'data/memory'),
       enabled: optionalEnv('MEMORY_ENABLED', 'true') === 'true',
+    },
+    proactive: {
+      enabled: optionalEnv('PROACTIVE_ENABLED', 'false') === 'true',
+      heartbeatIntervalMinutes: Number.parseInt(
+        optionalEnv('PROACTIVE_HEARTBEAT_INTERVAL', '30'),
+        10,
+      ),
+      activeHoursStart: Number.parseInt(optionalEnv('PROACTIVE_ACTIVE_HOURS_START', '8'), 10),
+      activeHoursEnd: Number.parseInt(optionalEnv('PROACTIVE_ACTIVE_HOURS_END', '22'), 10),
+      heartbeatPath: optionalEnv('PROACTIVE_HEARTBEAT_PATH', 'data/HEARTBEAT.md'),
+      schedulerDatabasePath: optionalEnv('PROACTIVE_SCHEDULER_DB_PATH', './data/scheduler.db'),
     },
     logLevel: optionalEnv('LOG_LEVEL', 'info'),
   }

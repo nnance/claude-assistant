@@ -303,6 +303,9 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
 
     handlerLogger.info('Received app mention')
 
+    // Auto-detect owner for proactive features (first user wins)
+    sessionStore.setSetting('owner_slack_user_id', mentionEvent.user)
+
     const threadTs = mentionEvent.thread_ts || mentionEvent.ts
     const messageText = extractMessageText(mentionEvent.text, context.botUserId)
 
@@ -430,6 +433,11 @@ export function registerHandlers(app: App, deps: HandlerDependencies): void {
     })
 
     handlerLogger.info(isDM ? 'Received direct message' : 'Received thread reply')
+
+    // Auto-detect owner for proactive features (first user wins)
+    if (messageEvent.user) {
+      sessionStore.setSetting('owner_slack_user_id', messageEvent.user)
+    }
 
     const messageText = messageEvent.text?.trim()
     if (!messageText) {

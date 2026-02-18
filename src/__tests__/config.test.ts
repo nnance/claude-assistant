@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { loadConfig } from '../config.js'
 
 describe('loadConfig', () => {
@@ -64,9 +64,8 @@ describe('loadConfig', () => {
     // biome-ignore lint/complexity/useLiteralKeys: TypeScript index signature requires bracket notation
     process.env['SLACK_BOT_TOKEN'] = undefined
 
-    assert.throws(
-      () => loadConfig(),
-      { message: /Missing required environment variable: SLACK_BOT_TOKEN/ },
-    )
+    assert.throws(() => loadConfig(), {
+      message: /Missing required environment variable: SLACK_BOT_TOKEN/,
+    })
   })
 })
