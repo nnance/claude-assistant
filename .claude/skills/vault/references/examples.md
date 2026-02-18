@@ -129,3 +129,36 @@ Grep → pattern: "kubernetes" in $VAULT_PATH/**/*.md
 ```
 
 **Response to user**: Lists matching files with the lines containing the search term.
+
+## Example 7: Marking a Task Complete
+
+**User input**: `I finished the follow up with Sarah`
+
+**Analysis**: User is indicating task completion, not creating a new note. Find and update the existing task.
+
+**Action sequence**:
+1. Search for the task:
+   ```
+   Grep → "sarah" in $VAULT_PATH/Tasks/
+   ```
+2. Read the matching file to confirm it's the right task
+3. Update the frontmatter status using Edit:
+   ```
+   Edit → change "status/active" to "status/done"
+   ```
+4. Log the completion
+
+**IMPORTANT**: Do NOT create a new note like "met-with-sarah.md" or "sarah-task-completed.md". Always update the original task file in place.
+
+**Log entry** appended to `$VAULT_PATH/_system/logs/2026-02-15.md`:
+
+```markdown
+## 16:00:00
+
+- **Input**: "I finished the follow up with Sarah"
+- **Action**: Task marked complete
+- **Updated**: Tasks/2026-02-15_follow-up-with-sarah-about-the-security-audit.md
+- **Change**: status/active → status/done
+```
+
+**Response to user**: Marked task complete: `Tasks/2026-02-15_follow-up-with-sarah-about-the-security-audit.md` (status changed to done).
