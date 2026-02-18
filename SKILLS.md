@@ -77,8 +77,8 @@ This document catalogs all skills available in this project. Skills extend the a
 - Create recurring jobs (fire on a cron schedule)
 - List, pause, resume, and delete scheduled jobs
 
-**Scripts**:
-- `scripts/scheduler.sh` - CRUD operations on the scheduler SQLite database
+**CLI**:
+- `npx tsx src/scheduler/cli.ts` - CRUD operations via the SchedulerStore
 
 **Configuration**: Requires `PROACTIVE_ENABLED=true` in environment.
 

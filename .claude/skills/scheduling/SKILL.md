@@ -7,34 +7,34 @@ description: Manages scheduled tasks and reminders using a SQLite-backed schedul
 
 Create, manage, and query scheduled jobs and reminders. Jobs are persisted in SQLite and executed automatically by the scheduler runner.
 
-**Script:** `.claude/skills/scheduling/scripts/scheduler.sh`
+**CLI:** `npx tsx src/scheduler/cli.ts <command> [args...]`
 
 ## Commands
 
 ```bash
 # List active jobs
-.claude/skills/scheduling/scripts/scheduler.sh list
+npx tsx src/scheduler/cli.ts list
 
 # List all jobs (including completed, paused, failed)
-.claude/skills/scheduling/scripts/scheduler.sh list all
+npx tsx src/scheduler/cli.ts list all
 
 # Create a one-shot job (fires once at the specified ISO timestamp)
-.claude/skills/scheduling/scripts/scheduler.sh create "Job Name" one_shot "2025-01-15T09:00:00.000Z" "The prompt to execute"
+npx tsx src/scheduler/cli.ts create "Job Name" one_shot "2025-01-15T09:00:00.000Z" "The prompt to execute"
 
 # Create a recurring job (fires on a cron schedule)
-.claude/skills/scheduling/scripts/scheduler.sh create "Morning Briefing" recurring "0 9 * * 1-5" "Check my calendar for today and summarize upcoming meetings"
+npx tsx src/scheduler/cli.ts create "Morning Briefing" recurring "0 9 * * 1-5" "Check my calendar for today and summarize upcoming meetings"
 
 # Get job details
-.claude/skills/scheduling/scripts/scheduler.sh get <job-id>
+npx tsx src/scheduler/cli.ts get <job-id>
 
 # Pause a job
-.claude/skills/scheduling/scripts/scheduler.sh pause <job-id>
+npx tsx src/scheduler/cli.ts pause <job-id>
 
 # Resume a paused job
-.claude/skills/scheduling/scripts/scheduler.sh resume <job-id>
+npx tsx src/scheduler/cli.ts resume <job-id>
 
 # Delete a job
-.claude/skills/scheduling/scripts/scheduler.sh delete <job-id>
+npx tsx src/scheduler/cli.ts delete <job-id>
 ```
 
 ## Output Format
