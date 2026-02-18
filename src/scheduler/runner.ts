@@ -1,6 +1,7 @@
 import type { App } from '@slack/bolt'
 import type { Logger } from 'pino'
 import type { Agent } from '../agent.js'
+import type { ProactiveConfig } from '../config.js'
 import type { SessionStore } from '../sessions/store.js'
 import { computeNextRun } from './cron.js'
 import { deliverDM } from './deliver.js'
@@ -9,12 +10,14 @@ import type { ScheduledJob } from './types.js'
 
 const MAX_FAILURES = 3
 const TICK_INTERVAL_MS = 60_000
+const NO_ACTION = 'NO_ACTION'
 
 export class SchedulerRunner {
   private agent: Agent
   private slackClient: App['client']
   private sessionStore: SessionStore
   private schedulerStore: SchedulerStore
+  private config: ProactiveConfig
   private logger: Logger
   private interval: ReturnType<typeof setInterval> | null = null
   private runningJobs = new Set<string>()
@@ -24,12 +27,14 @@ export class SchedulerRunner {
     slackClient: App['client']
     sessionStore: SessionStore
     schedulerStore: SchedulerStore
+    config: ProactiveConfig
     logger: Logger
   }) {
     this.agent = deps.agent
     this.slackClient = deps.slackClient
     this.sessionStore = deps.sessionStore
     this.schedulerStore = deps.schedulerStore
+    this.config = deps.config
     this.logger = deps.logger.child({ component: 'scheduler-runner' })
   }
 
@@ -48,8 +53,18 @@ export class SchedulerRunner {
     this.logger.info('Scheduler runner stopped')
   }
 
-  private async tick(): Promise<void> {
+  private isWithinActiveHours(): boolean {
+    const hour = new Date().getHours()
+    return hour >= this.config.activeHoursStart && hour < this.config.activeHoursEnd
+  }
+
+  async tick(): Promise<void> {
     try {
+      if (!this.isWithinActiveHours()) {
+        this.logger.debug('Outside active hours, skipping tick')
+        return
+      }
+
       const dueJobs = this.schedulerStore.getDueJobs(new Date())
       if (dueJobs.length === 0) return
 
@@ -75,12 +90,17 @@ export class SchedulerRunner {
     try {
       const result = await this.agent.send(job.prompt)
 
-      await deliverDM({
-        slackClient: this.slackClient,
-        sessionStore: this.sessionStore,
-        message: `*Scheduled: ${job.name}*\n\n${result.response}`,
-        logger: this.logger,
-      })
+      // NO_ACTION suppression: skip DM delivery if the job signals nothing to report
+      if (result.response.trim() === NO_ACTION) {
+        this.logger.debug({ jobId: job.id, name: job.name }, 'Job returned NO_ACTION, skipping DM')
+      } else {
+        await deliverDM({
+          slackClient: this.slackClient,
+          sessionStore: this.sessionStore,
+          message: `*Scheduled: ${job.name}*\n\n${result.response}`,
+          logger: this.logger,
+        })
+      }
 
       // Update job state
       if (job.job_type === 'recurring') {

@@ -71,10 +71,24 @@ When the user says natural language times, convert them as follows:
 * * * * *
 ```
 
+## Heartbeat Pattern
+
+A heartbeat is a recurring job that checks standing instructions and only notifies when action is needed. Create one like this:
+
+```bash
+npx tsx src/scheduler/cli.ts create "Heartbeat" recurring "*/30 * * * *" \
+  "Read the file data/HEARTBEAT.md for standing instructions. Follow them and check if any action is needed right now. If nothing requires attention, respond with exactly: NO_ACTION"
+```
+
+## NO_ACTION Convention
+
+Any job can respond with exactly `NO_ACTION` to suppress DM delivery. This is useful for monitoring/check-in jobs that should only notify the owner when something requires attention. The runner logs `NO_ACTION` responses at debug level.
+
 ## Best Practices
 
 - For reminders, use `one_shot` with an ISO timestamp
 - For recurring tasks, use `recurring` with a cron expression
 - The prompt field should be clear, self-contained instructions for the AI agent
 - Include context in the prompt (e.g., "Check my calendar and notify about meetings in the next hour")
+- For monitoring jobs, end prompts with "If nothing requires attention, respond with exactly: NO_ACTION"
 - When listing jobs for the user, format the output nicely with names, schedules, and status

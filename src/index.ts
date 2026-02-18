@@ -1,7 +1,7 @@
 import { createAgent } from './agent.js'
 import { createLogger, loadConfig } from './config.js'
 import { MemoryExtractor, MemoryStore } from './memory/index.js'
-import { HeartbeatRunner, SchedulerRunner, SchedulerStore } from './scheduler/index.js'
+import { SchedulerRunner, SchedulerStore } from './scheduler/index.js'
 import { SessionStore } from './sessions/store.js'
 import { createSlackApp } from './slack/app.js'
 
@@ -48,7 +48,6 @@ async function main() {
   // Initialize proactive systems
   let schedulerStore: SchedulerStore | undefined
   let schedulerRunner: SchedulerRunner | undefined
-  let heartbeatRunner: HeartbeatRunner | undefined
 
   if (config.proactive.enabled) {
     schedulerStore = new SchedulerStore(config.proactive.schedulerDatabasePath)
@@ -62,19 +61,11 @@ async function main() {
       slackClient: slackApp.client,
       sessionStore,
       schedulerStore,
-      logger,
-    })
-
-    heartbeatRunner = new HeartbeatRunner({
-      agent,
-      slackClient: slackApp.client,
-      sessionStore,
       config: config.proactive,
       logger,
     })
 
     schedulerRunner.start()
-    heartbeatRunner.start()
     logger.info('Proactive systems enabled')
   }
 
@@ -82,7 +73,6 @@ async function main() {
   const shutdown = async () => {
     logger.info('Shutting down...')
     schedulerRunner?.stop()
-    heartbeatRunner?.stop()
     schedulerStore?.close()
     sessionStore.close()
     process.exit(0)

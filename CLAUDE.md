@@ -36,7 +36,7 @@ Slack (Socket Mode) → Handlers → Session Store → Agent → Claude API
 - **src/agent.ts** - Wraps Anthropic SDK; manages conversation contexts per session
 - **src/slack/** - Bolt SDK integration with Socket Mode for @mentions and DMs
 - **src/sessions/store.ts** - SQLite persistence mapping Slack threads to agent sessions; also stores settings (owner detection)
-- **src/scheduler/** - Proactive features: scheduler store, runner (60s tick loop), heartbeat runner, cron utilities, DM delivery
+- **src/scheduler/** - Proactive features: scheduler store, runner (60s tick loop with active hours enforcement and NO_ACTION suppression), cron utilities, DM delivery
 - **src/config.ts** - Environment variable loading with validation
 
 ### Session Management
@@ -47,8 +47,8 @@ Sessions are keyed by `(slack_channel_id, slack_thread_ts)`. Each thread maintai
 
 When `PROACTIVE_ENABLED=true`, the assistant can act proactively:
 
-- **Heartbeat** - Periodic check-ins driven by standing instructions in `data/HEARTBEAT.md`. Runs every N minutes (default 30), only during active hours (8am-10pm). Responses of `HEARTBEAT_OK` are suppressed; duplicate alerts are deduplicated within 24h.
-- **Scheduler** - AI-managed scheduled tasks persisted in SQLite (`data/scheduler.db`). Supports one-shot (fire once) and recurring (cron-based) jobs. The scheduler runner ticks every 60s. Jobs auto-disable after 3 consecutive failures.
+- **Scheduler** - AI-managed scheduled tasks persisted in SQLite (`data/scheduler.db`). Supports one-shot (fire once) and recurring (cron-based) jobs. The scheduler runner ticks every 60s, only during active hours (8am-10pm configurable). Jobs responding with `NO_ACTION` have DM delivery suppressed. Jobs auto-disable after 3 consecutive failures.
+- **Heartbeat** - Implemented as a recurring scheduled job (not a separate runner). Create via the scheduler CLI with a prompt that reads `data/HEARTBEAT.md` and responds `NO_ACTION` when nothing needs attention.
 - **Owner Detection** - The first Slack user to interact with the bot is recorded as the owner. Proactive messages are delivered via DM to the owner.
 
 ### Daemon Setup
