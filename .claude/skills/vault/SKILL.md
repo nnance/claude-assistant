@@ -1,7 +1,7 @@
 ---
 name: managing-vault
-description: "Captures, organizes, and retrieves notes in an Obsidian vault. Use when the user says: 'save a note', 'capture this', 'remember that', 'add to vault', 'list notes', 'read note', 'find in vault', 'show my tasks', or 'log this'."
-allowed-tools: Read, Write, Glob, Grep, Bash
+description: "Captures, organizes, and retrieves notes in an Obsidian vault. Use when the user says: 'save a note', 'capture this', 'remember that', 'add to vault', 'list notes', 'read note', 'find in vault', 'show my tasks', 'log this', 'mark task complete', 'I finished', 'task is done', or 'update the note'."
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # Obsidian Vault Management
@@ -43,6 +43,30 @@ Read → $VAULT_PATH/<path>
 ```
 
 If path is ambiguous, use Glob to find matches.
+
+### Update Note (Status Changes, Completions, Edits)
+
+When the user marks a task as complete or requests changes to an existing note:
+
+1. **Find the original note**: Search by title, person, or content using Glob/Grep
+2. **Read the existing note** to get current frontmatter and content
+3. **Update in place** using Edit tool:
+   - Change `status/active` → `status/done` for completions
+   - Add updates to the body (e.g., "**Update:** ...")
+   - Preserve all other frontmatter fields
+4. **Optionally move to Archive**: If requested, move completed tasks to Archive folder
+5. **Log the update** to daily log
+
+**IMPORTANT**: Never create a new "completed" note. Always update the original task file.
+
+**Example completion flow**:
+```
+User: "I finished the task about following up with Sarah"
+1. Grep → "sarah" in $VAULT_PATH/Tasks/
+2. Read → found file to confirm it's the right one
+3. Edit → change "status/active" to "status/done"
+4. Log → record the completion
+```
 
 ### List Notes
 
