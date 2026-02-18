@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 import { formatMarkdownForSlack } from '../slack/formatter.js'
 
 describe('formatMarkdownForSlack', () => {
@@ -34,7 +34,10 @@ describe('formatMarkdownForSlack', () => {
 
   describe('strikethrough conversion', () => {
     it('converts ~~strike~~ to ~strike~', () => {
-      assert.strictEqual(formatMarkdownForSlack('This is ~~deleted~~ text'), 'This is ~deleted~ text')
+      assert.strictEqual(
+        formatMarkdownForSlack('This is ~~deleted~~ text'),
+        'This is ~deleted~ text',
+      )
     })
   })
 

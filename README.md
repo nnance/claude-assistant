@@ -1,14 +1,15 @@
 # Claude Assistant
 
-A self-hosted personal AI assistant built on the Anthropic SDK, running as a daemon on macOS with Slack integration.
+A self-hosted personal AI assistant running as a macOS daemon with Slack integration. Built on the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/claude-agent-sdk) — a battle-tested agent harness with a zero-trust permission model, built-in tools (file editing, shell access, web search), skills, and sub-agent support. This project layers a thin runtime on top of the SDK, keeping application code minimal and letting the agent drive behavior through prompts and skills.
 
 ## Features
 
+- **Claude Agent SDK** - Zero-trust agent harness with built-in tools, skills, sub-agents, and session management
 - **Slack Integration** - Communicate via @mentions in channels or direct messages
-- **Persistent Sessions** - Conversations maintain context within threads
+- **Persistent Sessions** - Conversations maintain context within threads, backed by the SDK's session resumption
+- **Proactive Scheduling** - AI-managed scheduled tasks with automatic heartbeat monitoring
 - **macOS Daemon** - Runs as a launchd service with automatic restart
-- **SQLite Storage** - Session persistence across daemon restarts
-- **Extensible Skills** - Apple services, Obsidian vault, and memory extraction (see [SKILLS.md](SKILLS.md))
+- **Extensible Skills** - Apple services, Obsidian vault, Slack messaging, and more (see [SKILLS.md](SKILLS.md))
 
 ## Prerequisites
 
@@ -113,6 +114,16 @@ See `.env.example` for all options:
 | `SESSION_DATABASE_PATH` | `./data/sessions.db` | SQLite database location |
 | `SESSION_EXPIRE_DAYS` | `7` | Days until session cleanup |
 | `LOG_LEVEL` | `info` | Logging verbosity |
+
+## Design Principles
+
+This project follows three core principles that guide all contributions:
+
+1. **Prompt-driven over deterministic code** — Agent behavior should be shaped by prompts and skills, not hardcoded logic. The agent gets autonomy to decide what to do. Code should be limited to API interactions (local or remote) exposed as CLI tools.
+
+2. **CLIs over MCP tools** — Expose capabilities as CLI commands that skills invoke via `npx tsx`. This supports progressive disclosure — the agent discovers tools through skills as needed rather than managing a large predefined tool list.
+
+3. **Keep it simple and DRY** — Minimal external dependencies (only add frameworks when they provide significant value). Reuse existing skills and code within the project. Prefer the simplest solution that works.
 
 ## Development
 

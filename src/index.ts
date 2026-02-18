@@ -1,6 +1,7 @@
 import { createAgent } from './agent.js'
 import { createLogger, loadConfig } from './config.js'
 import { MemoryExtractor, MemoryStore } from './memory/index.js'
+import { SchedulerRunner, SchedulerStore } from './scheduler/index.js'
 import { SessionStore } from './sessions/store.js'
 import { createSlackApp } from './slack/app.js'
 
@@ -44,9 +45,33 @@ async function main() {
     logLevel: config.logLevel,
   })
 
+  // Initialize proactive systems
+  let schedulerStore: SchedulerStore | undefined
+  let schedulerRunner: SchedulerRunner | undefined
+
+  if (config.proactive.enabled) {
+    schedulerStore = new SchedulerStore(config.proactive.schedulerDatabasePath)
+    logger.info(
+      { databasePath: config.proactive.schedulerDatabasePath },
+      'Scheduler store initialized',
+    )
+
+    schedulerRunner = new SchedulerRunner({
+      agent,
+      schedulerStore,
+      config: config.proactive,
+      logger,
+    })
+
+    schedulerRunner.start()
+    logger.info('Proactive systems enabled')
+  }
+
   // Handle graceful shutdown
   const shutdown = async () => {
     logger.info('Shutting down...')
+    schedulerRunner?.stop()
+    schedulerStore?.close()
     sessionStore.close()
     process.exit(0)
   }
