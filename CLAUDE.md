@@ -18,6 +18,12 @@ Run a single test file:
 npm test -- src/__tests__/config.test.ts
 ```
 
+## Design Principles
+
+1. **Prompt-driven over deterministic code** — Agent behavior should be shaped by prompts and skills, not hardcoded logic. Give the agent autonomy to decide what to do. Code should be limited to API interactions (local or remote) exposed as CLI tools.
+2. **CLIs over MCP tools** — Expose capabilities as CLI commands that skills invoke via `npx tsx`. This supports progressive disclosure — the agent discovers tools through skills as needed rather than managing a large predefined tool list.
+3. **Keep it simple and DRY** — Minimal external dependencies (only add frameworks when they provide significant value like Next.js, React, etc.). Reuse existing skills and code within the project. Prefer the simplest solution that works.
+
 ## Architecture
 
 This is a personal AI assistant that runs as a macOS daemon, communicating via Slack and powered by Claude (Anthropic SDK).
@@ -36,7 +42,7 @@ Slack (Socket Mode) → Handlers → Session Store → Agent → Claude API
 - **src/agent.ts** - Wraps Anthropic SDK; manages conversation contexts per session
 - **src/slack/** - Bolt SDK integration with Socket Mode for @mentions and DMs
 - **src/sessions/store.ts** - SQLite persistence mapping Slack threads to agent sessions; also stores settings (owner detection)
-- **src/scheduler/** - Proactive features: scheduler store, runner (60s tick loop with active hours enforcement and NO_ACTION suppression), cron utilities, DM delivery
+- **src/scheduler/** - Proactive features: scheduler store, runner (60s tick loop with active hours enforcement), cron utilities
 - **src/config.ts** - Environment variable loading with validation
 
 ### Session Management
@@ -47,9 +53,9 @@ Sessions are keyed by `(slack_channel_id, slack_thread_ts)`. Each thread maintai
 
 When `PROACTIVE_ENABLED=true`, the assistant can act proactively:
 
-- **Scheduler** - AI-managed scheduled tasks persisted in SQLite (`data/scheduler.db`). Supports one-shot (fire once) and recurring (cron-based) jobs. The scheduler runner ticks every 60s, only during active hours (8am-10pm configurable). Jobs responding with `NO_ACTION` have DM delivery suppressed. Jobs auto-disable after 3 consecutive failures.
-- **Heartbeat** - Implemented as a recurring scheduled job (not a separate runner). Create via the scheduler CLI with a prompt that reads `data/HEARTBEAT.md` and responds `NO_ACTION` when nothing needs attention.
-- **Owner Detection** - The first Slack user to interact with the bot is recorded as the owner. Proactive messages are delivered via DM to the owner.
+- **Scheduler** - AI-managed scheduled tasks persisted in SQLite (`data/scheduler.db`). Supports one-shot (fire once) and recurring (cron-based) jobs. The scheduler runner ticks every 60s, only during active hours (8am-10pm configurable). The agent delivers messages via the Slack messaging skill when results are worth reporting. Jobs auto-disable after 3 consecutive failures.
+- **Heartbeat** - Implemented as a recurring scheduled job (not a separate runner). Auto-created on scheduler startup. The agent reads `data/HEARTBEAT.md` for standing instructions and uses the Slack messaging skill to notify when action is needed.
+- **Owner Detection** - The first Slack user to interact with the bot is recorded as the owner. Proactive messages are delivered via DM to the owner using the Slack CLI (`src/slack/cli.ts`).
 
 ### Daemon Setup
 

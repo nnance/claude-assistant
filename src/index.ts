@@ -58,8 +58,6 @@ async function main() {
 
     schedulerRunner = new SchedulerRunner({
       agent,
-      slackClient: slackApp.client,
-      sessionStore,
       schedulerStore,
       config: config.proactive,
       logger,

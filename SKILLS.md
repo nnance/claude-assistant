@@ -9,6 +9,7 @@ This document catalogs all skills available in this project. Skills extend the a
 | [managing-apple-services](#managing-apple-services) | macOS Calendar, Contacts, Notes | "calendar", "schedule", "contacts", "notes" |
 | [managing-vault](#managing-vault) | Obsidian vault note management | "save a note", "add to vault", "show my tasks" |
 | [scheduling](#scheduling) | Scheduled tasks and reminders | "remind me", "schedule", "every morning", "recurring" |
+| [slack-messaging](#slack-messaging) | Send Slack DMs and channel messages | "send a message", "notify me", "DM me" |
 | [memory](#memory) | Cross-thread memory extraction | (automatic, not user-invoked) |
 
 ## Skills
@@ -81,6 +82,28 @@ This document catalogs all skills available in this project. Skills extend the a
 - `npx tsx src/scheduler/cli.ts` - CRUD operations via the SchedulerStore
 
 **Configuration**: Requires `PROACTIVE_ENABLED=true` in environment.
+
+---
+
+### slack-messaging
+
+**Location**: `.claude/skills/slack-messaging/`
+
+**Description**: Sends Slack messages to the bot owner or specific channels via CLI.
+
+**Triggers**:
+- "send a message", "notify me", "DM me"
+- When a scheduled job produces results worth delivering
+- Any context where the agent needs to proactively message the owner
+
+**Capabilities**:
+- Send DM to bot owner (`send-dm`)
+- Send message to a specific channel (`send`)
+
+**CLI**:
+- `npx tsx src/slack/cli.ts` - Send messages via Slack Web API
+
+**Configuration**: Requires `SLACK_BOT_TOKEN` in environment and owner set in `sessions.db`.
 
 ---
 

@@ -73,16 +73,17 @@ When the user says natural language times, convert them as follows:
 
 ## Heartbeat Pattern
 
-A heartbeat is a recurring job that checks standing instructions and only notifies when action is needed. Create one like this:
+A heartbeat is a recurring job that checks standing instructions and only notifies when action is needed. The runner auto-creates a heartbeat job on startup. Its prompt instructs the agent to use the Slack messaging skill (`send-dm`) when something needs attention, and do nothing otherwise.
+
+## Delivering Results
+
+Jobs that produce results worth sharing should use the **slack-messaging** skill to deliver them:
 
 ```bash
-npx tsx src/scheduler/cli.ts create "Heartbeat" recurring "*/30 * * * *" \
-  "Read the file data/HEARTBEAT.md for standing instructions. Follow them and check if any action is needed right now. If nothing requires attention, respond with exactly: NO_ACTION"
+npx tsx src/slack/cli.ts send-dm "Your notification here"
 ```
 
-## NO_ACTION Convention
-
-Any job can respond with exactly `NO_ACTION` to suppress DM delivery. This is useful for monitoring/check-in jobs that should only notify the owner when something requires attention. The runner logs `NO_ACTION` responses at debug level.
+The agent decides whether to send a message based on the job's output — no special tokens or conventions needed. If nothing requires attention, the agent simply doesn't send a message.
 
 ## Best Practices
 
@@ -90,5 +91,5 @@ Any job can respond with exactly `NO_ACTION` to suppress DM delivery. This is us
 - For recurring tasks, use `recurring` with a cron expression
 - The prompt field should be clear, self-contained instructions for the AI agent
 - Include context in the prompt (e.g., "Check my calendar and notify about meetings in the next hour")
-- For monitoring jobs, end prompts with "If nothing requires attention, respond with exactly: NO_ACTION"
+- Use the Slack messaging skill to deliver results when the job produces something worth reporting
 - When listing jobs for the user, format the output nicely with names, schedules, and status

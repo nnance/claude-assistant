@@ -1,25 +1,20 @@
-import type { App } from '@slack/bolt'
+import { execSync } from 'node:child_process'
 import type { Logger } from 'pino'
 import type { Agent } from '../agent.js'
 import type { ProactiveConfig } from '../config.js'
-import type { SessionStore } from '../sessions/store.js'
 import { computeNextRun } from './cron.js'
-import { deliverDM } from './deliver.js'
 import type { SchedulerStore } from './store.js'
 import type { ScheduledJob } from './types.js'
 
 const MAX_FAILURES = 3
 const TICK_INTERVAL_MS = 60_000
-const NO_ACTION = 'NO_ACTION'
 const HEARTBEAT_JOB_NAME = 'Heartbeat'
 const HEARTBEAT_CRON = '*/30 * * * *'
 const HEARTBEAT_PROMPT =
-  'Read the file data/HEARTBEAT.md for standing instructions. Follow them and check if any action is needed right now. If nothing requires attention, respond with exactly: NO_ACTION'
+  'Read the file data/HEARTBEAT.md for standing instructions. Follow them and check if any action is needed right now. If something requires attention, send a DM to the owner using the Slack CLI with a concise notification. If nothing requires attention, do nothing.'
 
 export class SchedulerRunner {
   private agent: Agent
-  private slackClient: App['client']
-  private sessionStore: SessionStore
   private schedulerStore: SchedulerStore
   private config: ProactiveConfig
   private logger: Logger
@@ -28,15 +23,11 @@ export class SchedulerRunner {
 
   constructor(deps: {
     agent: Agent
-    slackClient: App['client']
-    sessionStore: SessionStore
     schedulerStore: SchedulerStore
     config: ProactiveConfig
     logger: Logger
   }) {
     this.agent = deps.agent
-    this.slackClient = deps.slackClient
-    this.sessionStore = deps.sessionStore
     this.schedulerStore = deps.schedulerStore
     this.config = deps.config
     this.logger = deps.logger.child({ component: 'scheduler-runner' })
@@ -110,19 +101,7 @@ export class SchedulerRunner {
     this.logger.info({ jobId: job.id, name: job.name }, 'Executing scheduled job')
 
     try {
-      const result = await this.agent.send(job.prompt)
-
-      // NO_ACTION suppression: skip DM delivery if the job signals nothing to report
-      if (result.response.trim() === NO_ACTION) {
-        this.logger.debug({ jobId: job.id, name: job.name }, 'Job returned NO_ACTION, skipping DM')
-      } else {
-        await deliverDM({
-          slackClient: this.slackClient,
-          sessionStore: this.sessionStore,
-          message: `*Scheduled: ${job.name}*\n\n${result.response}`,
-          logger: this.logger,
-        })
-      }
+      await this.agent.send(job.prompt)
 
       // Update job state
       if (job.job_type === 'recurring') {
@@ -143,12 +122,14 @@ export class SchedulerRunner {
         this.schedulerStore.updateStatus(job.id, 'failed')
         this.logger.warn({ jobId: job.id, failureCount }, 'Job disabled after max failures')
 
-        await deliverDM({
-          slackClient: this.slackClient,
-          sessionStore: this.sessionStore,
-          message: `*Scheduled job failed: ${job.name}*\nDisabled after ${failureCount} consecutive failures.`,
-          logger: this.logger,
-        })
+        try {
+          execSync(
+            `npx tsx src/slack/cli.ts send-dm "⚠️ *Scheduled job failed: ${job.name}*\nDisabled after ${failureCount} consecutive failures."`,
+            { timeout: 15_000, stdio: 'pipe' },
+          )
+        } catch (dmError) {
+          this.logger.error({ error: dmError }, 'Failed to send failure alert DM')
+        }
       }
     } finally {
       this.runningJobs.delete(job.id)
