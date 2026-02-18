@@ -71,6 +71,13 @@ export class SchedulerStore {
     return stmt.get(id) ?? null
   }
 
+  findByName(name: string): ScheduledJob | null {
+    const stmt = this.db.prepare<[string], ScheduledJob>(`
+      SELECT * FROM scheduled_jobs WHERE name = ? AND status = 'active' LIMIT 1
+    `)
+    return stmt.get(name) ?? null
+  }
+
   list(includeAll = false): ScheduledJob[] {
     if (includeAll) {
       return this.db

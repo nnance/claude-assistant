@@ -11,6 +11,10 @@ import type { ScheduledJob } from './types.js'
 const MAX_FAILURES = 3
 const TICK_INTERVAL_MS = 60_000
 const NO_ACTION = 'NO_ACTION'
+const HEARTBEAT_JOB_NAME = 'Heartbeat'
+const HEARTBEAT_CRON = '*/30 * * * *'
+const HEARTBEAT_PROMPT =
+  'Read the file data/HEARTBEAT.md for standing instructions. Follow them and check if any action is needed right now. If nothing requires attention, respond with exactly: NO_ACTION'
 
 export class SchedulerRunner {
   private agent: Agent
@@ -39,10 +43,28 @@ export class SchedulerRunner {
   }
 
   start(): void {
+    this.ensureHeartbeatJob()
     this.logger.info('Scheduler runner started (60s tick)')
     this.interval = setInterval(() => this.tick(), TICK_INTERVAL_MS)
     // Run first tick immediately
     this.tick()
+  }
+
+  private ensureHeartbeatJob(): void {
+    const existing = this.schedulerStore.findByName(HEARTBEAT_JOB_NAME)
+    if (existing) return
+
+    const nextRun = computeNextRun(HEARTBEAT_CRON)
+    this.schedulerStore.create(
+      {
+        name: HEARTBEAT_JOB_NAME,
+        job_type: 'recurring',
+        schedule: HEARTBEAT_CRON,
+        prompt: HEARTBEAT_PROMPT,
+      },
+      nextRun,
+    )
+    this.logger.info('Heartbeat job created automatically')
   }
 
   stop(): void {
