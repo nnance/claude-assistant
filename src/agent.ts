@@ -1,27 +1,35 @@
+import * as fs from 'node:fs'
 import * as os from 'node:os'
+import * as path from 'node:path'
 import { type SDKAssistantMessage, type SDKMessage, query } from '@anthropic-ai/claude-agent-sdk'
 import type { Logger } from 'pino'
 import type { AgentConfig } from './config.js'
 import type { MemoryExtractor, SlackContext } from './memory/index.js'
 import type { MemoryStore } from './memory/index.js'
 
-const SYSTEM_PROMPT = `You are an assistant AI agent running as a macOS daemon, communicating via Slack.
+const PROMPT_FILES = [
+  { file: 'SOUL.md', label: 'Soul', description: "Defines the agent's core values and consciousness." },
+  { file: 'IDENTITY.md', label: 'Identity', description: "Defines the agent's persona and operating environment." },
+  { file: 'AGENTS.md', label: 'Operational Rules', description: "Defines what the agent can do and how to use its tools." },
+  { file: 'USER.md', label: 'User Context', description: "Defines who the agent is serving and their preferences." },
+]
 
-You have access to skills defined in .claude/skills/ that extend your capabilities.
-Use the provided tools to assist with the user's requests.
+function loadPromptFiles(logger: Logger): string {
+  const sections: string[] = []
 
-# Tool Priority
+  for (const { file, label, description } of PROMPT_FILES) {
+    const filePath = path.resolve(process.cwd(), file)
+    let content = ''
+    try {
+      content = fs.readFileSync(filePath, 'utf-8').trim()
+    } catch {
+      logger.warn({ file: filePath }, `Prompt file not found, skipping section: ${label}`)
+    }
+    sections.push(`# ${label}\n> ${description}\n${content}`)
+  }
 
-Prefer using vault skills (search, read, list) over file grep and file search tools for most requests.
-The vault is your primary knowledge base for notes, references, tasks, and personal/professional information.
-Only use file grep, file search, or direct file access when the user's intent is clearly about:
-- Files on their computer (e.g. "find that config file", "read my .zshrc")
-- Coding or development activities (e.g. "search the codebase", "look at this repo")
-
-# Key Information
-
-Use the vault skills to accesss notes in the Reference folder for important personal and professional information of the user.
-Read these notes when you need context about the user.`
+  return sections.join('\n\n---\n\n')
+}
 
 export interface AgentResponse {
   response: string
@@ -76,6 +84,7 @@ export class Agent {
   private logger: Logger
   private memoryStore: MemoryStore | null
   private memoryExtractor: MemoryExtractor | null
+  private promptContent: string
 
   constructor(
     config: AgentConfig,
@@ -87,6 +96,7 @@ export class Agent {
     this.logger = logger.child({ component: 'agent' })
     this.memoryStore = memoryStore ?? null
     this.memoryExtractor = memoryExtractor ?? null
+    this.promptContent = loadPromptFiles(this.logger)
   }
 
   private buildSystemPrompt(): string {
@@ -101,10 +111,10 @@ Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}.
 
 `
 
-    if (!this.memoryStore) return dateTimeContext + SYSTEM_PROMPT
+    if (!this.memoryStore) return dateTimeContext + this.promptContent
 
     const memoryContext = this.memoryStore.getMemoryContext()
-    if (!memoryContext) return dateTimeContext + SYSTEM_PROMPT
+    if (!memoryContext) return dateTimeContext + this.promptContent
 
     return `${dateTimeContext}# Cross-Thread Memory
 
@@ -114,7 +124,7 @@ ${memoryContext}
 
 ---
 
-${SYSTEM_PROMPT}`
+${this.promptContent}`
   }
 
   async send(
