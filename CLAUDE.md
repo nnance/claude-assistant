@@ -71,10 +71,12 @@ See `.env.example` for optional configuration (model, timeouts, session expiry).
 
 ## Skills
 
-Skills are located in `.claude/skills/`. Each skill has a `SKILL.md` file with YAML frontmatter and markdown instructions.
+Core skills live in `.claude/skills/`. Each skill has a `SKILL.md` file with YAML frontmatter and markdown instructions. Optional skills (Apple Services, Google Workspace, Vault, etc.) are maintained separately in the [claude-assistant-skills](https://github.com/nnance/claude-assistant-skills) registry and can be installed via the `skill-registry` skill.
 
-**When adding or modifying skills:**
+**When adding or modifying core skills:**
 1. Follow [Anthropic's skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
 2. Use gerund naming (e.g., `managing-vault`, not `vault`)
 3. Write descriptions in third person with trigger phrases
 4. Update `SKILLS.md` registry with the new/changed skill details
+
+**To contribute an optional skill**, see the [claude-assistant-skills](https://github.com/nnance/claude-assistant-skills) repo.
