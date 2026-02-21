@@ -1,64 +1,39 @@
 # Skills Registry
 
-This document catalogs all skills available in this project. Skills extend the assistant's capabilities with specialized behaviors and tools.
+This document catalogs all skills built into this project. Skills extend the assistant's capabilities with specialized behaviors and tools.
+
+Optional skills (Apple Services, Google Workspace, Vault, and more) are available in the [claude-assistant-skills](https://github.com/nnance/claude-assistant-skills) registry and can be installed via the `skill-registry` skill.
 
 ## Overview
 
 | Skill | Description | Trigger Phrases |
 |-------|-------------|-----------------|
-| [managing-apple-services](#managing-apple-services) | macOS Calendar, Contacts, Notes | "calendar", "schedule", "contacts", "notes" |
-| [managing-vault](#managing-vault) | Obsidian vault note management | "save a note", "add to vault", "show my tasks" |
+| [skill-registry](#skill-registry) | Browse and install skills from the registry | "install skill", "list available skills", "what skills are available" |
 | [scheduling](#scheduling) | Scheduled tasks and reminders | "remind me", "schedule", "every morning", "recurring" |
 | [slack-messaging](#slack-messaging) | Send Slack DMs and channel messages | "send a message", "notify me", "DM me" |
 | [memory](#memory) | Cross-thread memory extraction | (automatic, not user-invoked) |
 
 ## Skills
 
-### managing-apple-services
+### skill-registry
 
-**Location**: `.claude/skills/apple-services/`
+**Location**: `.claude/skills/skill-registry/`
 
-**Description**: Manages Apple Calendar, Contacts, and Notes on macOS via shell scripts.
-
-**Triggers**:
-- Calendar: "what's on my calendar", "schedule a meeting", "upcoming events"
-- Contacts: "find contact", "phone number for", "email for"
-- Notes: "personal information", "professional information", mentions of Apple Notes
-
-**Capabilities**:
-- List, search, create, and delete calendar events
-- Search, list, and create contacts
-- Read, search, create, and edit Apple Notes
-
-**Scripts**:
-- `scripts/calendar.sh` - Calendar operations
-- `scripts/contacts.sh` - Contacts operations
-- `scripts/notes.sh` - Notes operations
-
----
-
-### managing-vault
-
-**Location**: `.claude/skills/vault/`
-
-**Description**: Captures, organizes, and retrieves notes in an Obsidian vault.
+**Description**: Browses, installs, and updates optional skills from the [claude-assistant-skills](https://github.com/nnance/claude-assistant-skills) GitHub registry using the `gh` CLI.
 
 **Triggers**:
-- "save a note", "capture this", "remember that"
-- "add to vault", "list notes", "read note"
-- "find in vault", "show my tasks", "log this"
+- "install skill", "find a skill", "search for skills"
+- "list available skills", "what skills are available"
+- "update the vault skill", "upgrade apple-services"
 
 **Capabilities**:
-- Create notes with automatic folder classification (Tasks, Ideas, Reference, Projects)
-- Search and retrieve notes by content or tags
-- Maintain daily interaction logs
+- List all available skills in the registry
+- Read a skill's description before installing
+- Install any skill by downloading its files into `.claude/skills/`
+- Update installed skills to the latest version
 
-**Configuration**: Requires `$VAULT_PATH` environment variable pointing to Obsidian vault.
-
-**Reference Files**:
-- `references/tags.md` - Tag system documentation
-- `references/note-format.md` - Note formatting standards
-- `references/examples.md` - Usage examples
+**CLI**:
+- Uses `gh api` commands against `repos/nnance/claude-assistant-skills`
 
 ---
 
@@ -133,7 +108,13 @@ This document catalogs all skills available in this project. Skills extend the a
 
 ## Adding New Skills
 
+### Built-in skills (this repo)
+
 1. Create a directory under `.claude/skills/<skill-name>/`
 2. Add a `SKILL.md` file with YAML frontmatter (`name`, `description`) and markdown instructions
 3. Follow [Anthropic's skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
 4. Update this registry with the new skill details
+
+### Registry skills
+
+To contribute an optional skill to the public registry, see the [claude-assistant-skills](https://github.com/nnance/claude-assistant-skills) repo.
