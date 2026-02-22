@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.claude-assistant.__USERNAME__</string>
+    <key>UserName</key>
+    <string>__USERNAME__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>--env-file=__WORKING_DIR__/.env</string>
+        <string>__WORKING_DIR__/dist/index.js</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__WORKING_DIR__</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/tmp/claude-assistant.__USERNAME__.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/claude-assistant.__USERNAME__.error.log</string>
+</dict>
+</plist>
