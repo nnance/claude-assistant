@@ -38,7 +38,7 @@ assistant2  (/Users/assistant2/claude-assistant/)
 ## Prerequisites
 
 - macOS 13+ (Ventura or later)
-- Node.js >= 20 installed system-wide (`brew install node`)
+- Node.js >= 20 installed system-wide via the [official pkg installer](https://nodejs.org/en/download) (not Homebrew)
 - Admin account on the Mac Studio
 - One Slack app (bot) per instance — see [Create a Slack App](#create-a-slack-app)
 - One Anthropic API key per instance (or a shared key — your choice)
@@ -61,10 +61,13 @@ Repeat for each bot. Each app needs its own workspace install or can target the 
 
 ### 1. Install Node.js (system-wide)
 
+Download and run the **macOS pkg installer** from [nodejs.org](https://nodejs.org/en/download) (LTS, >= 20). This installs Node to `/usr/local/bin/node`, which is on the PATH for all users including system daemon accounts.
+
+> **Do not use Homebrew.** `brew install node` installs to `/opt/homebrew/bin`, which is not on the PATH for service accounts running under `launchd`.
+
 ```bash
-brew install node
-# Verify
-node --version   # >= 20
+# Verify after install
+/usr/local/bin/node --version   # >= 20
 ```
 
 ### 2. (Optional) Install LM Studio

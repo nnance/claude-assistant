@@ -9,7 +9,7 @@ This guide covers running one `claude-assistant` as a persistent macOS system da
 ## Prerequisites
 
 - macOS 13+ (Ventura or later)
-- Node.js >= 20 installed system-wide (e.g. via [Homebrew](https://brew.sh): `brew install node`)
+- Node.js >= 20 installed system-wide via the [official pkg installer](https://nodejs.org/en/download) (installs to `/usr/local/bin/node`, accessible to all users and system daemons — do not use Homebrew, which installs to `/opt/homebrew/bin` and is not on the PATH for service accounts)
 - A Slack workspace with admin access
 - An [Anthropic API key](https://console.anthropic.com)
 
