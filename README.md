@@ -69,18 +69,16 @@ SLACK_SIGNING_SECRET=...
 npm install
 ```
 
-### 4. Run
+### 4. Deploy
 
 **Development (with hot-reload):**
 ```bash
 npm run dev
 ```
 
-**Production (as daemon):**
-```bash
-npm run build
-./scripts/install-daemon.sh
-```
+**Production (as daemon):** see the deployment guides:
+- **[Single Instance](docs/deployment-single.md)** — recommended for any always-on Mac
+- **[Team Deployment](docs/deployment-team.md)** — multiple isolated instances on one machine
 
 ## Usage
 
@@ -95,23 +93,6 @@ find all TODO comments in ~/Developer/myproject
 ```
 
 Conversations within a thread share context, allowing follow-up questions.
-
-## Daemon Management
-
-```bash
-# View logs
-tail -f /tmp/claude-assistant.log
-tail -f /tmp/claude-assistant.error.log
-
-# Stop daemon
-launchctl unload ~/Library/LaunchAgents/com.user.claude-assistant.plist
-
-# Start daemon
-launchctl load ~/Library/LaunchAgents/com.user.claude-assistant.plist
-
-# Uninstall
-./scripts/uninstall-daemon.sh
-```
 
 ## Customizing the Agent
 
