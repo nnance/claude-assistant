@@ -10,6 +10,7 @@ This guide covers running 3–5 isolated `claude-assistant` instances on a singl
 
 ```
 Admin user (you)
+  └── LM Studio → localhost:1234   (shared inference, optional)
   └── /Library/LaunchDaemons/
         com.claude-assistant.assistant1.plist  (UserName: assistant1)
         com.claude-assistant.assistant2.plist  (UserName: assistant2)
@@ -65,6 +66,10 @@ brew install node
 # Verify
 node --version   # >= 20
 ```
+
+### 2. (Optional) Install LM Studio
+
+See [LM Studio + MLX Models](#lm-studio--mlx-models-optional) below. LM Studio runs under your admin account and is accessible to all instances via `localhost:1234`.
 
 ---
 
@@ -163,6 +168,41 @@ sudo launchctl bootout system/com.claude-assistant.assistant1
 # Remove plist (uninstall)
 sudo rm /Library/LaunchDaemons/com.claude-assistant.assistant1.plist
 ```
+
+---
+
+## LM Studio + MLX Models (Optional)
+
+LM Studio provides an OpenAI-compatible local inference server on `localhost:1234`. **MLX** is Apple's ML framework optimized for the Apple Neural Engine — MLX-format models run significantly faster than GGUF on M-series chips.
+
+All instances share one LM Studio server running under your admin account.
+
+### Install LM Studio
+
+1. Download from [lmstudio.ai](https://lmstudio.ai) (macOS 13+)
+2. Open LM Studio → **Local Server** → **Start Server** (port 1234)
+3. Preferences → enable **"Start server on app launch"**
+4. System Settings → General → Login Items → add LM Studio
+
+### Install MLX Models
+
+In LM Studio's model search, filter by `mlx-community`. Recommended for M2/M3 Ultra:
+
+| Model | VRAM | Best for |
+|-------|------|----------|
+| `mlx-community/Mistral-7B-Instruct-v0.3-4bit` | ~4 GB | Fast, low memory |
+| `mlx-community/Meta-Llama-3.1-8B-Instruct-4bit` | ~5 GB | Strong general purpose |
+| `mlx-community/Qwen2.5-32B-Instruct-4bit` | ~20 GB | High quality (needs ~20GB) |
+
+### Configure Each Instance
+
+Add to each instance's `.env`:
+
+```bash
+LM_STUDIO_BASE_URL=http://localhost:1234/v1
+```
+
+`localhost:1234` is accessible to all user accounts on the same machine. The main agent uses Claude (Anthropic SDK); `LM_STUDIO_BASE_URL` provisions the infrastructure for skills that need lightweight local inference via the OpenAI-compatible API.
 
 ---
 
