@@ -144,42 +144,6 @@ sudo launchctl kill SIGTERM system/com.claude-assistant.assistant
 
 ---
 
-## 8. Local Models (Optional) — LM Studio + MLX
-
-LM Studio can serve local models via an OpenAI-compatible API on `localhost:1234`. MLX-format models run significantly faster than GGUF on Apple Silicon (M-series chips use the Apple Neural Engine).
-
-### Install LM Studio
-
-1. Download from [lmstudio.ai](https://lmstudio.ai) (requires macOS 13+)
-2. Open LM Studio → **Local Server** tab → **Start Server** (default port: 1234)
-3. Enable **"Start server on app launch"** in preferences
-
-### Install an MLX Model
-
-In LM Studio's model search, filter by `mlx-community`. Recommended picks:
-
-| Model | VRAM | Best for |
-|-------|------|----------|
-| `mlx-community/Mistral-7B-Instruct-v0.3-4bit` | ~4 GB | Fast, low memory |
-| `mlx-community/Meta-Llama-3.1-8B-Instruct-4bit` | ~5 GB | Strong general purpose |
-| `mlx-community/Qwen2.5-32B-Instruct-4bit` | ~20 GB | High quality (M2/M3 Ultra) |
-
-### Add LM Studio to Login Items
-
-System Settings → General → Login Items → add LM Studio so the server starts at login.
-
-### Configure the Agent
-
-Add to `.env`:
-
-```bash
-LM_STUDIO_BASE_URL=http://localhost:1234/v1
-```
-
-The main agent uses Claude (Anthropic SDK). The `LM_STUDIO_BASE_URL` variable provisions the infrastructure for skills that need lightweight local inference via the OpenAI-compatible API.
-
----
-
 ## Verification
 
 ```bash
