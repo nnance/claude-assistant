@@ -10,7 +10,6 @@ import type { MemoryStore } from './memory/index.js'
 const PROMPT_FILES = [
   { file: 'SOUL.md', label: 'Soul', description: "Defines the agent's core values and consciousness." },
   { file: 'IDENTITY.md', label: 'Identity', description: "Defines the agent's persona and operating environment." },
-  { file: 'AGENTS.md', label: 'Operational Rules', description: "Defines what the agent can do and how to use its tools." },
   { file: 'USER.md', label: 'User Context', description: "Defines who the agent is serving and their preferences." },
 ]
 

@@ -102,7 +102,7 @@ The agent's behavior is defined by four markdown files at the repo root. Edit th
 |------|---------|
 | `SOUL.md` | Core values and personality — who the agent is |
 | `IDENTITY.md` | Persona and operating environment — how it presents itself |
-| `AGENTS.md` | Operational rules and tool priority — what it can do and how |
+| `CLAUDE.md` | Operational rules and tool priority — what it can do and how |
 | `USER.md` | User context — who it's serving and where to find their information |
 
 If a file is missing, the agent logs a warning and starts with that section empty.
