@@ -53,7 +53,8 @@ Repeat for each bot. Each app needs its own workspace install or can target the 
 2. Enable **Socket Mode** → generate App-Level Token with `connections:write`
 3. Bot Token Scopes: `app_mentions:read`, `chat:write`, `im:history`, `im:read`, `im:write`, `reactions:write`
 4. Event Subscriptions: `app_mention`, `message.im`
-5. Install to workspace → copy **Bot Token** and **App Token**
+5. Enable DMs: App Home → Show Tabs → check **"Allow users to send Slash commands and messages from the messages tab"**
+6. Install to workspace → copy **Bot Token** and **App Token**
 
 ---
 

@@ -45,8 +45,9 @@ This project follows three core principles that guide all contributions:
 6. Subscribe to events under Event Subscriptions:
    - `app_mention`
    - `message.im`
-7. Install to workspace
-8. Copy Bot Token and App Token
+7. Enable DMs: App Home → Show Tabs → check **"Allow users to send Slash commands and messages from the messages tab"**
+8. Install to workspace
+9. Copy Bot Token and App Token
 
 ### 2. Configure Environment
 
