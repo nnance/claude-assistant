@@ -43,7 +43,7 @@ for USERNAME in "${INSTANCES[@]}"; do
 
     # Pull latest code as the instance user
     log "  Pulling latest code..."
-    if ! sudo -u "$USERNAME" git -C "$WORK_DIR" pull --ff-only; then
+    if ! sudo -u "$USERNAME" HOME="/Users/$USERNAME" git -C "$WORK_DIR" pull --ff-only; then
         log "  WARN: git pull failed — skipping $USERNAME"
         FAILED+=("$USERNAME")
         continue
@@ -51,7 +51,7 @@ for USERNAME in "${INSTANCES[@]}"; do
 
     # Rebuild
     log "  Rebuilding..."
-    if ! sudo -u "$USERNAME" bash -c "cd '$WORK_DIR' && npm install && npm run build"; then
+    if ! sudo -u "$USERNAME" HOME="/Users/$USERNAME" bash -c "cd '$WORK_DIR' && npm install && npm run build"; then
         log "  WARN: build failed — skipping restart for $USERNAME"
         FAILED+=("$USERNAME")
         continue
