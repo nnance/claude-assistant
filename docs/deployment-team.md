@@ -113,6 +113,31 @@ SLACK_APP_TOKEN=xapp-...       # unique per instance
 SLACK_SIGNING_SECRET=...       # unique per instance
 ```
 
+### Working with Service Account Files
+
+The setup script creates service accounts with no login shell (`/usr/bin/false`), so you can't use `su` to switch users. Use one of these approaches to edit files or run commands in their directories:
+
+**Interactive shell** (best for multiple edits):
+
+```bash
+sudo -u assistant1 bash
+cd ~/claude-assistant
+# edit files, run commands, etc.
+exit
+```
+
+**Single command**:
+
+```bash
+sudo -u assistant1 nano /Users/assistant1/claude-assistant/.env
+```
+
+**Edit directly as root** (simplest for quick changes):
+
+```bash
+sudo nano /Users/assistant1/claude-assistant/.env
+```
+
 ### Start All Instances
 
 ```bash
@@ -220,8 +245,8 @@ To upgrade a single instance manually:
 ```bash
 USERNAME=assistant1
 WORK_DIR="/Users/$USERNAME/claude-assistant"
-sudo -u "$USERNAME" git -C "$WORK_DIR" pull
-sudo -u "$USERNAME" bash -c "cd $WORK_DIR && npm install && npm run build"
+sudo -u "$USERNAME" HOME="/Users/$USERNAME" git -C "$WORK_DIR" pull
+sudo -u "$USERNAME" HOME="/Users/$USERNAME" bash -c "cd $WORK_DIR && npm install && npm run build"
 sudo launchctl kill SIGTERM "system/com.claude-assistant.$USERNAME"
 ```
 

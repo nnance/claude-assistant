@@ -86,20 +86,20 @@ log "Step 2: Cloning repository..."
 if [[ -d "$WORK_DIR/.git" ]]; then
     log "  Repo already exists at $WORK_DIR — skipping clone."
 else
-    sudo -u "$USERNAME" git clone "$REPO_URL" "$WORK_DIR"
+    sudo -u "$USERNAME" HOME="$HOME_DIR" git clone "$REPO_URL" "$WORK_DIR"
     log "  Cloned into $WORK_DIR."
 fi
 
 # ── Step 3: Install dependencies and build ────────────────────────────────────
 
 log "Step 3: Installing dependencies and building..."
-sudo -u "$USERNAME" bash -c "cd '$WORK_DIR' && npm install && npm run build"
+sudo -u "$USERNAME" HOME="$HOME_DIR" bash -c "cd '$WORK_DIR' && npm install && npm run build"
 log "  Build complete."
 
 # ── Step 4: Create data directory and .env ────────────────────────────────────
 
 log "Step 4: Setting up .env..."
-sudo -u "$USERNAME" mkdir -p "$WORK_DIR/data"
+sudo -u "$USERNAME" HOME="$HOME_DIR" mkdir -p "$WORK_DIR/data"
 
 if [[ -f "$WORK_DIR/.env" ]]; then
     log "  .env already exists — skipping."
